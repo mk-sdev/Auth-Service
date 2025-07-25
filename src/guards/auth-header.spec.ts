@@ -2,7 +2,7 @@ import { ExecutionContext, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Test } from '@nestjs/testing';
 import { JwtGuard } from './jwt.guard';
-import { JwtPayload } from './utils/interfaces';
+import { JwtPayload } from '../utils/interfaces';
 
 // helper type to mock the request from the header
 interface MockRequest {

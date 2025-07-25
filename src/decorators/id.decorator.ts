@@ -3,7 +3,7 @@ import {
   ExecutionContext,
   UnauthorizedException,
 } from '@nestjs/common';
-import { UserRequest } from './utils/interfaces';
+import { UserRequest } from '../utils/interfaces';
 
 export const Id = createParamDecorator(
   (_data: unknown, ctx: ExecutionContext): string => {

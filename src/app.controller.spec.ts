@@ -3,7 +3,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ChangePasswordDto } from './dtos/changePassword.dto';
-import { JwtGuard } from './jwt.guard';
+import { JwtGuard } from './guards/jwt.guard';
 import { RegisterDto } from './dtos/register.dto';
 import { LoginDto } from './dtos/login.dto';
 

@@ -1,5 +1,5 @@
 import { createParamDecorator, ExecutionContext } from '@nestjs/common';
-import { UserRequest } from './utils/interfaces';
+import { UserRequest } from '../utils/interfaces';
 
 export const Platform = createParamDecorator(
   (_data: unknown, ctx: ExecutionContext): 'web' | 'mobile' => {

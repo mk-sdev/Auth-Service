@@ -2,7 +2,7 @@ import { ValidationPipe } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { ChangeEmailDto } from '../dtos/changeEmail.dto';
 import { EmailDto } from '../dtos/email.dto';
-import { JwtGuard } from '../jwt.guard';
+import { JwtGuard } from '../guards/jwt.guard';
 import { MailController } from './mail.controller';
 import { MailService } from './mail.service';
 

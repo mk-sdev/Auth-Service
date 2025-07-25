@@ -17,10 +17,10 @@ import { Response } from 'express';
 import { AppService } from './app.service';
 import { ChangePasswordDto } from './dtos/changePassword.dto';
 import { LoginDto } from './dtos/login.dto';
-import { Id } from './id.decorator';
-import { JwtGuard } from './jwt.guard';
-import { Roles } from './roles.decorator';
-import { RolesGuard } from './roles.guard';
+import { Id } from './decorators/id.decorator';
+import { JwtGuard } from './guards/jwt.guard';
+import { Roles } from './decorators/roles.decorator';
+import { RolesGuard } from './guards/roles.guard';
 import { Role } from './utils/interfaces';
 @Controller()
 @UsePipes(
