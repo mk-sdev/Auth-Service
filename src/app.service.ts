@@ -9,6 +9,7 @@ import { RepositoryService } from './repository/repository.service';
 import { account_deletion_lifespan } from './utils/constants';
 import { JwtPayload } from './utils/interfaces';
 import { HashService } from './hash.service';
+import Redis from 'ioredis';
 
 type NewPayload = Omit<JwtPayload, 'iat' | 'exp'>;
 
@@ -21,20 +22,41 @@ export class AppService {
     @Inject('JWT_REFRESH_SERVICE')
     private readonly refreshTokenService: JwtService,
     private readonly hashService: HashService,
+    @Inject('REDIS_CLIENT') private readonly redis: Redis,
   ) {}
 
   async login(
     email: string,
     password: string,
   ): Promise<{ access_token: string; refresh_token: string }> {
+    const key = `login_attempts:${email}`;
+    const ttlSeconds = 60 * 5; // 5 minutes
+
+    // increment and get number if attempts
+    const attempts = await this.redis.incr(key);
+
+    if (attempts === 1) {
+      // set a key that expires ttlSeconds after the first attempt
+      await this.redis.expire(key, ttlSeconds);
+    }
+
+    if (attempts > 5) {
+      throw new UnauthorizedException(
+        'Too many login attempts. Try again later.',
+      );
+    }
+
     const user = await this.repositoryService.findOneByEmail(email); //* find a user with a provided email
     if (!user) {
       throw new UnauthorizedException();
     }
 
     if (!user.isVerified) {
-      throw new UnauthorizedException('Nie zweryfikowano konta');
+      throw new UnauthorizedException(
+        'Verify your account in order to sign in.',
+      );
     }
+
     //* check if the password matches
     const isPasswordValid: boolean = await this.hashService.verify(
       user.password,
@@ -66,6 +88,8 @@ export class AppService {
     if (user.isDeletionPending) {
       await this.repositoryService.cancelScheduledDeletion(user._id as string);
     }
+
+    await this.redis.del(key);
 
     return {
       access_token,

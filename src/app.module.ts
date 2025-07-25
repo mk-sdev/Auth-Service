@@ -12,6 +12,7 @@ import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 import { HashService } from './hash.service';
 import { ProtectedModule } from './protected/protected.module';
+import { RedisModule } from './redis.module';
 
 @Module({
   imports: [
@@ -46,6 +47,7 @@ import { ProtectedModule } from './protected/protected.module';
     MailModule,
     JwtModule,
     ProtectedModule,
+    RedisModule,
   ],
   controllers: [AppController],
   providers: [
