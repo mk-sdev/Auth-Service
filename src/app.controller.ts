@@ -58,10 +58,18 @@ export class AppController {
   @Patch('logout')
   @UseInterceptors(LoggingInterceptor)
   @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtGuard)
   async logout(@Body() body: { refresh_token: string }) {
     const { refresh_token } = body;
     await this.appService.logout(refresh_token);
     return { message: 'Logout successful' };
+  }
+
+  @Patch('global-logout')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtGuard)
+  async globalLogout(@Id() id: string) {
+    await this.appService.globalLogout(id);
   }
 
   @Patch('refresh')

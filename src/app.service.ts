@@ -126,6 +126,10 @@ export class AppService {
     }
   }
 
+  async globalLogout(id: string) {
+    await this.repositoryService.clearTokens(id);
+  }
+
   // creates both new access and refresh tokens
   async refreshTokens(
     refresh_token: string,

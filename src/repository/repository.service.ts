@@ -145,6 +145,13 @@ export class RepositoryService {
     );
   }
 
+  async clearTokens(id: string) {
+    await this.userModel.updateOne(
+      { _id: id },
+      { $set: { refreshTokens: [] } },
+    );
+  }
+
   async setNewPasswordFromResetToken(
     token: string,
     newPassword: string,
