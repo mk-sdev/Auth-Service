@@ -10,6 +10,8 @@ import { account_deletion_lifespan } from './utils/constants';
 import { JwtPayload } from './utils/interfaces';
 import { HashService } from './hash.service';
 
+type NewPayload = Omit<JwtPayload, 'iat' | 'exp'>;
+
 @Injectable()
 export class AppService {
   constructor(
@@ -43,9 +45,9 @@ export class AppService {
       throw new UnauthorizedException();
     }
     //* if the user is found and the password matches, generate a JWT token and send it back
-    const payload = {
-      sub: user._id,
-      // email: user.email,
+    const payload: NewPayload = {
+      sub: user._id as string,
+      roles: user.roles,
     };
     const access_token = await this.accessTokenService.signAsync(payload);
     const refresh_token = await this.refreshTokenService.signAsync(payload);
@@ -111,7 +113,11 @@ export class AppService {
 
       if (!user) throw new UnauthorizedException('Invalid refresh token');
 
-      const newPayload = { sub: user._id, email: user.email };
+      const newPayload: NewPayload = {
+        sub: user._id as string,
+        roles: user.roles ?? ['USER'],
+      };
+
       const newAccessToken =
         await this.accessTokenService.signAsync(newPayload);
       const newRefreshToken =

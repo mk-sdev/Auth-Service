@@ -2,7 +2,7 @@ import { ExecutionContext, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Test } from '@nestjs/testing';
 import { JwtGuard } from './jwt.guard';
-import { JwtPayload } from '../utils/interfaces';
+import { JwtPayload, Role } from '../utils/interfaces';
 
 const createMockContext = (
   cookies?: Record<string, string>,
@@ -45,6 +45,7 @@ describe('JwtGuard', () => {
 
     const expectedPayload: JwtPayload = {
       sub: '686d021df9510428d42bcd94',
+      roles: [Role.USER],
       iat: 1752049014,
       exp: 33278091414, // 999 years
     };
