@@ -15,13 +15,10 @@ import {
 } from '@nestjs/common';
 import { Response } from 'express';
 import { AppService } from './app.service';
+import { Id } from './decorators/id.decorator';
 import { ChangePasswordDto } from './dtos/changePassword.dto';
 import { LoginDto } from './dtos/login.dto';
-import { Id } from './decorators/id.decorator';
 import { JwtGuard } from './guards/jwt.guard';
-import { Roles } from './decorators/roles.decorator';
-import { RolesGuard } from './guards/roles.guard';
-import { Role } from './utils/interfaces';
 @Controller()
 @UsePipes(
   new ValidationPipe({
@@ -32,8 +29,6 @@ import { Role } from './utils/interfaces';
 export class AppController {
   constructor(private readonly appService: AppService) {}
 
-  @Roles(Role.ADMIN, Role.MODERATOR) // only admins or moderators are allowed
-  @UseGuards(JwtGuard, RolesGuard)
   @Get('hello')
   getHello(): string {
     return 'Hello World!';

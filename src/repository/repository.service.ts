@@ -6,6 +6,10 @@ import { UserDocument } from './user.schema';
 export class RepositoryService {
   constructor(@InjectModel('User') private userModel: Model<UserDocument>) {}
 
+  async getAllUsers() {
+    return await this.userModel.find({}, 'email').lean();
+  }
+
   async insertOne({
     email,
     password,
