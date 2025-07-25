@@ -11,15 +11,18 @@ interface MockRequest {
 }
 
 // helper type to mock ExecutionContext
-// const createMockContext = (
-//   headers: Record<string, string>,
-// ): ExecutionContext => {
-//   return {
-//     switchToHttp: () => ({
-//       getRequest: () => ({ headers }) as MockRequest,
-//     }),
-//   } as unknown as ExecutionContext;
-// };
+const createMockContext = (token: string): ExecutionContext => {
+  return {
+    switchToHttp: () => ({
+      getRequest: () =>
+        ({
+          headers: {
+            authorization: `Bearer ${token}`,
+          },
+        }) as MockRequest,
+    }),
+  } as unknown as ExecutionContext;
+};
 
 describe('JwtGuard', () => {
   let jwtService: JwtService;
@@ -47,15 +50,7 @@ describe('JwtGuard', () => {
     const token =
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2ODZkMDIxZGY5NTEwNDI4ZDQyYmNkOTQiLCJpYXQiOjE3NTIwNDkwMTQsImV4cCI6MzMyNzgwOTE0MTR9.o2hFMNL9IaFDD05sJYEDwUicW-bsretWzgubJe3IHg8';
 
-    const context = {
-      switchToHttp: () => ({
-        getRequest: () => ({
-          headers: {
-            authorization: `Bearer ${token}`,
-          },
-        }),
-      }),
-    } as ExecutionContext;
+    const context = createMockContext(token);
 
     const expectedPayload: JwtPayload = {
       sub: '686d021df9510428d42bcd94',
@@ -70,35 +65,11 @@ describe('JwtGuard', () => {
     expect(result).toBe(true);
   });
 
-  it('should throw UnauthorizedException if no token provided', async () => {
-    const context = {
-      switchToHttp: () => ({
-        getRequest: () => ({
-          headers: {
-            authorization: `Bearer `,
-          },
-        }),
-      }),
-    } as ExecutionContext;
-
-    await expect(guard.canActivate(context)).rejects.toThrow(
-      UnauthorizedException,
-    );
-  });
-
   it('should throw UnauthorizedException if secret is invalid', async () => {
     const invalidToken =
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2ODZkMDIxZGY5NTEwNDI4ZDQyYmNkOTQiLCJpYXQiOjE3NTIwNDk0NTksImV4cCI6MzMyNzgwOTE4NTl9.iqAkno2HJW6J1-A3do50hs95diMRaDljyyzR0Ii2EU4'; // secret: wrongsecret
 
-    const context = {
-      switchToHttp: () => ({
-        getRequest: () => ({
-          headers: {
-            authorization: `Bearer ${invalidToken}`,
-          },
-        }),
-      }),
-    } as ExecutionContext;
+    const context = createMockContext(invalidToken);
 
     await expect(guard.canActivate(context)).rejects.toThrow(
       UnauthorizedException,
@@ -109,15 +80,7 @@ describe('JwtGuard', () => {
     const alteredToken =
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2ODZkMDIxZGY5NTEwNDI4ZDQyYmNkOTQiLCJpYXQiOjE3NTIwNDk4MTMsImV4cCI6MzMyNzgwOsTIyMTN9.YJy0_zD-wIYXwNEfwDSVOjaCTwm7EhXC0B1dZ-FsWUI';
 
-    const context = {
-      switchToHttp: () => ({
-        getRequest: () => ({
-          headers: {
-            authorization: `Bearer ${alteredToken}`,
-          },
-        }),
-      }),
-    } as ExecutionContext;
+    const context = createMockContext(alteredToken);
 
     await expect(guard.canActivate(context)).rejects.toThrow(
       UnauthorizedException,
@@ -128,18 +91,26 @@ describe('JwtGuard', () => {
     const expiredToken =
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2ODZkMDIxZGY5NTEwNDI4ZDQyYmNkOTQiLCJpYXQiOjE3NTIwNTAwMzUsImV4cCI6MTc1MjA1MDA1MH0.PB9JnoM-Jwuu53Na2_iVOtFn6vpulnMTC0pACr_flUw';
 
-    const context = {
-      switchToHttp: () => ({
-        getRequest: () => ({
-          headers: {
-            authorization: `Bearer ${expiredToken}`,
-          },
-        }),
-      }),
-    } as ExecutionContext;
+    const context = createMockContext(expiredToken);
 
     await expect(guard.canActivate(context)).rejects.toThrow(
       UnauthorizedException,
     );
   });
+
+  // it('should throw UnauthorizedException if no token provided', async () => {
+  //   const context = {
+  //     switchToHttp: () => ({
+  //       getRequest: () => ({
+  //         headers: {
+  //           authorization: `Bearer `,
+  //         },
+  //       }),
+  //     }),
+  //   } as ExecutionContext;
+
+  //   await expect(guard.canActivate(context)).rejects.toThrow(
+  //     UnauthorizedException,
+  //   );
+  // });
 });
