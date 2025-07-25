@@ -32,7 +32,7 @@ import { Role } from './utils/interfaces';
 export class AppController {
   constructor(private readonly appService: AppService) {}
 
-  @Roles(Role.ADMIN, Role.MODERATOR)
+  @Roles(Role.ADMIN, Role.MODERATOR) // only admins or moderators are allowed
   @UseGuards(JwtGuard, RolesGuard)
   @Get('hello')
   getHello(): string {
