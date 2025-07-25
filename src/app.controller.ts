@@ -10,6 +10,7 @@ import {
   Res,
   UnauthorizedException,
   UseGuards,
+  UseInterceptors,
   UsePipes,
   ValidationPipe,
 } from '@nestjs/common';
@@ -19,6 +20,8 @@ import { Id } from './decorators/id.decorator';
 import { ChangePasswordDto } from './dtos/changePassword.dto';
 import { LoginDto } from './dtos/login.dto';
 import { JwtGuard } from './guards/jwt.guard';
+import { LoggingInterceptor } from './logging.interceptor';
+
 @Controller()
 @UsePipes(
   new ValidationPipe({
@@ -35,6 +38,7 @@ export class AppController {
   }
 
   @Patch('login')
+  @UseInterceptors(LoggingInterceptor)
   @HttpCode(HttpStatus.OK)
   async signIn(
     @Body() loginDto: LoginDto,
@@ -52,6 +56,7 @@ export class AppController {
   }
 
   @Patch('logout')
+  @UseInterceptors(LoggingInterceptor)
   @HttpCode(HttpStatus.OK)
   async logout(@Body() body: { refresh_token: string }) {
     const { refresh_token } = body;
