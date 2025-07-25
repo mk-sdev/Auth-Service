@@ -50,18 +50,18 @@ export class MailService {
         <p>If that's not you, ignore this message.</p>
       `,
     );
-    await this.mailerService.sendMail({
-      to: toEmail,
-      subject,
-      template: undefined,
-      context,
-      html: `
-          <h3>Welcome!</h3>
-          <p>Click the link below:</p>
-          <a href="${confirmationLink}">${confirmationLink}</a>
-          <p>If that's not you, ignore this message.</p>
-        `,
-    });
+    // await this.mailerService.sendMail({
+    //   to: toEmail,
+    //   subject,
+    //   template: undefined,
+    //   context,
+    //   html: `
+    //       <h3>Welcome!</h3>
+    //       <p>Click the link below:</p>
+    //       <a href="${confirmationLink}">${confirmationLink}</a>
+    //       <p>If that's not you, ignore this message.</p>
+    //     `,
+    // });
   }
 
   async register(email: string, password: string): Promise<void> {

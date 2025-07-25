@@ -5,6 +5,8 @@ import { EmailDto } from '../dtos/email.dto';
 import { JwtGuard } from '../guards/jwt.guard';
 import { MailController } from './mail.controller';
 import { MailService } from './mail.service';
+import { plainToInstance } from 'class-transformer';
+import { validateSync } from 'class-validator';
 
 describe('MailController (integration)', () => {
   let controller: MailController;
@@ -97,6 +99,18 @@ describe('MailController (integration)', () => {
           }),
         ).rejects.toThrow();
       });
+    });
+  });
+
+  describe('EmailDto transform', () => {
+    it('should transform email to lowercase using class-transformer', () => {
+      const plain = { email: 'ExAmple@EMAIL.Com' };
+      const instance = plainToInstance(EmailDto, plain);
+
+      expect(instance.email).toBe('example@email.com');
+
+      const errors = validateSync(instance);
+      expect(errors.length).toBe(0);
     });
   });
 });

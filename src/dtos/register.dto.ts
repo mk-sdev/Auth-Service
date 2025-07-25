@@ -1,3 +1,4 @@
+import { Transform } from 'class-transformer';
 import {
   IsEmail,
   IsNotEmpty,
@@ -9,6 +10,7 @@ import {
 
 export class RegisterDto {
   @IsEmail({}, { message: 'Invalid email format' })
+  @Transform(({ value }: { value: string }) => value?.toLowerCase())
   email: string;
 
   @IsNotEmpty({ message: 'Password cannot be empty' })

@@ -1,7 +1,9 @@
+import { Transform } from 'class-transformer';
 import { IsEmail, IsNotEmpty, IsString, Matches } from 'class-validator';
 
 export class ChangeEmailDto {
   @IsEmail({}, { message: 'Invalid email format' })
+  @Transform(({ value }: { value: string }) => value?.toLowerCase())
   newEmail: string;
 
   @IsNotEmpty({ message: 'Password cannot be empty' })
