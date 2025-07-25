@@ -19,6 +19,9 @@ import { ChangePasswordDto } from './dtos/changePassword.dto';
 import { LoginDto } from './dtos/login.dto';
 import { Id } from './id.decorator';
 import { JwtGuard } from './jwt.guard';
+import { Roles } from './roles.decorator';
+import { RolesGuard } from './roles.guard';
+import { Role } from './utils/interfaces';
 @Controller()
 @UsePipes(
   new ValidationPipe({
@@ -29,6 +32,8 @@ import { JwtGuard } from './jwt.guard';
 export class AppController {
   constructor(private readonly appService: AppService) {}
 
+  @Roles(Role.ADMIN, Role.MODERATOR)
+  @UseGuards(JwtGuard, RolesGuard)
   @Get('hello')
   getHello(): string {
     return 'Hello World!';
