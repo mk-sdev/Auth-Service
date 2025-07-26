@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import Redis from 'ioredis';
-import { HashService } from './hash.service';
+import { HashService } from './utils/hash.service';
 import { PasswordRepoService } from './repository/passwordRepo.service';
 import { TokenRepoService } from './repository/tokenRepo.service';
 import { UserCrudRepoService } from './repository/userCrudRepo.service';

@@ -13,7 +13,6 @@ import { VerificationRepoService } from './verificationRepo.service';
 @Module({
   imports: [MongooseModule.forFeature([{ name: 'User', schema: UserSchema }])],
   providers: [
-    // RepositoryService,
     MongoUserCrudService,
     MongoPasswordService,
     MongoTokenService,
@@ -24,7 +23,6 @@ import { VerificationRepoService } from './verificationRepo.service';
     VerificationRepoService,
   ],
   exports: [
-    // RepositoryService,
     UserCrudRepoService,
     PasswordRepoService,
     TokenRepoService,

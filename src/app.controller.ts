@@ -20,7 +20,7 @@ import { Id } from './decorators/id.decorator';
 import { ChangePasswordDto } from './dtos/changePassword.dto';
 import { LoginDto } from './dtos/login.dto';
 import { JwtGuard } from './guards/jwt.guard';
-import { LoggingInterceptor } from './logging.interceptor';
+import { LoggingInterceptor } from './utils/logging.interceptor';
 
 @Controller()
 @UsePipes(

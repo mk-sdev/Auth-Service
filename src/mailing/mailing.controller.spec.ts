@@ -3,20 +3,20 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ChangeEmailDto } from '../dtos/changeEmail.dto';
 import { EmailDto } from '../dtos/email.dto';
 import { JwtGuard } from '../guards/jwt.guard';
-import { MailController } from './mail.controller';
-import { MailService } from './mail.service';
+import { MailingController } from './mailing.controller';
+import { MailingService } from './mailing.service';
 import { plainToInstance } from 'class-transformer';
 import { validateSync } from 'class-validator';
 
 describe('MailController (integration)', () => {
-  let controller: MailController;
+  let controller: MailingController;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      controllers: [MailController],
+      controllers: [MailingController],
       providers: [
         {
-          provide: MailService,
+          provide: MailingService,
           useValue: {},
         },
       ],
@@ -25,7 +25,7 @@ describe('MailController (integration)', () => {
       .useValue({ canActivate: () => true })
       .compile();
 
-    controller = module.get<MailController>(MailController);
+    controller = module.get<MailingController>(MailingController);
   });
 
   describe('ValidationPipe for EmailDto', () => {

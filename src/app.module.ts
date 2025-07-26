@@ -6,13 +6,13 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { TokensModule } from './utils/tokens.module';
-import { MailModule } from './mail/mail.module';
+import { MailingModule } from './mailing/mailing.module';
 import { RepositoryModule } from './repository/repository.module';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
-import { HashService } from './hash.service';
+import { HashService } from './utils/hash.service';
 import { ProtectedModule } from './protected/protected.module';
-import { RedisModule } from './redis.module';
+import { RedisModule } from './utils/redis.module';
 
 @Module({
   imports: [
@@ -44,7 +44,7 @@ import { RedisModule } from './redis.module';
     }),
     RepositoryModule,
     TokensModule,
-    MailModule,
+    MailingModule,
     JwtModule,
     ProtectedModule,
     RedisModule,

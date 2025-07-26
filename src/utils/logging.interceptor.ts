@@ -5,7 +5,7 @@ import {
   NestInterceptor,
 } from '@nestjs/common';
 import { Observable, tap } from 'rxjs';
-import { UserRequest } from './utils/interfaces';
+import { UserRequest } from './interfaces';
 
 // * To monitor the execution time of endpoints that use hashing
 

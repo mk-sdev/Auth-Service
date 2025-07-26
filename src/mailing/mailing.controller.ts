@@ -18,7 +18,7 @@ import { RegisterDto } from '../dtos/register.dto';
 import { ResetPasswordDto } from '../dtos/resetPassword.dto';
 import { Id } from '../decorators/id.decorator';
 import { JwtGuard } from '../guards/jwt.guard';
-import { MailService } from './mail.service';
+import { MailingService } from './mailing.service';
 
 // * this controller handles mailing-related endpoints
 @Controller()
@@ -28,8 +28,8 @@ import { MailService } from './mail.service';
     forbidNonWhitelisted: true, // throws exceptions if encounters additional attributes
   }),
 )
-export class MailController {
-  constructor(private readonly mailService: MailService) {}
+export class MailingController {
+  constructor(private readonly mailService: MailingService) {}
 
   @Post('register')
   @HttpCode(HttpStatus.CREATED)

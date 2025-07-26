@@ -1,9 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AppService } from './app.service';
 import { RepositoryService } from './repository/repository.service';
-import { MailService } from './mail/mail.service';
+import { MailingService } from './mailing/mailing.service';
 import { JwtPayload } from './utils/interfaces';
-import { HashService } from './hash.service';
+import { HashService } from './utils/hash.service';
 
 describe('AppService', () => {
   let appService: AppService;
@@ -48,7 +48,7 @@ describe('AppService', () => {
           useValue: mockJwtRefreshService,
         },
         {
-          provide: MailService,
+          provide: MailingService,
           useValue: mockMailService,
         },
         {

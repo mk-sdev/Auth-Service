@@ -15,13 +15,13 @@ import {
   password_reset_lifespan,
   URL,
 } from '../utils/constants';
-import { HashService } from '../hash.service';
+import { HashService } from '../utils/hash.service';
 import { PasswordRepoService } from '../repository/passwordRepo.service';
 import { VerificationRepoService } from '../repository/verificationRepo.service';
 import { UserCrudRepoService } from '../repository/userCrudRepo.service';
 
 @Injectable()
-export class MailService {
+export class MailingService {
   constructor(
     private readonly passwordRepoService: PasswordRepoService,
     private readonly verificationRepoService: VerificationRepoService,
