@@ -1,7 +1,10 @@
 import {
+  Body,
   Controller,
   Get,
   NotFoundException,
+  Param,
+  Patch,
   Query,
   UseGuards,
 } from '@nestjs/common';
@@ -11,14 +14,7 @@ import { RolesGuard } from '../guards/roles.guard';
 import { RepositoryService } from '../repository/repository.service';
 import { UserDocument } from '../repository/user.schema';
 import { Role } from '../utils/interfaces';
-
-// we don't want to expose unnecessary, or too sensitive data, even for admins
-type SafeUser = {
-  _id: string;
-  email: string;
-  roles: Role[];
-  isVerified: boolean;
-};
+import { SafeUserDto } from '../dtos/safeUser.dto';
 
 @UseGuards(JwtGuard, RolesGuard)
 @Controller('protected')
@@ -30,7 +26,7 @@ export class ProtectedController {
   async getUser(
     @Query('id') id: string,
     @Query('email') email: string,
-  ): Promise<SafeUser | null> {
+  ): Promise<SafeUserDto | null> {
     let user: UserDocument | null;
 
     if (id) user = await this.repositoryService.findOne(id);
@@ -44,6 +40,15 @@ export class ProtectedController {
       roles: user.roles,
       isVerified: user.isVerified,
     };
+  }
+
+  @Roles(Role.ADMIN)
+  @Patch('user/:id')
+  async moderateUser(
+    @Param('id') id: string,
+    @Body() userDto: Omit<SafeUserDto, '_id'>,
+  ): Promise<void> {
+    await this.repositoryService.moderateUser(id, userDto);
   }
 
   @Roles(Role.ADMIN)
