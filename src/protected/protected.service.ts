@@ -1,10 +1,10 @@
 import { Injectable } from '@nestjs/common';
-import { RepositoryService } from '../repository/repository.service';
+// import { RepositoryService } from '../repository/repository.service';
 import { UserDocument } from '../repository/user.schema';
 
 @Injectable()
 export class ProtectedService {
-  constructor(private readonly repositoryService: RepositoryService) {}
+  constructor() {}
   // async getAllUsers(options: {
   //   skip: number;
   //   limit: number;

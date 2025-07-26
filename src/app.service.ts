@@ -5,18 +5,22 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { RepositoryService } from './repository/repository.service';
+import Redis from 'ioredis';
+import { HashService } from './hash.service';
+import { PasswordRepoService } from './repository/passwordRepo.service';
+import { TokenRepoService } from './repository/tokenRepo.service';
+import { UserCrudRepoService } from './repository/userCrudRepo.service';
 import { account_deletion_lifespan } from './utils/constants';
 import { JwtPayload } from './utils/interfaces';
-import { HashService } from './hash.service';
-import Redis from 'ioredis';
 
 type NewPayload = Omit<JwtPayload, 'iat' | 'exp'>;
 
 @Injectable()
 export class AppService {
   constructor(
-    private repositoryService: RepositoryService,
+    private readonly passwordRepoService: PasswordRepoService,
+    private readonly tokenRepoService: TokenRepoService,
+    private readonly userCrudRepoService: UserCrudRepoService,
     @Inject('JWT_ACCESS_SERVICE')
     private readonly accessTokenService: JwtService,
     @Inject('JWT_REFRESH_SERVICE')
@@ -46,7 +50,7 @@ export class AppService {
       );
     }
 
-    const user = await this.repositoryService.findOneByEmail(email); //* find a user with a provided email
+    const user = await this.userCrudRepoService.findOneByEmail(email); //* find a user with a provided email
     if (!user) {
       throw new UnauthorizedException();
     }
@@ -78,15 +82,17 @@ export class AppService {
       await this.hashService.hash(refresh_token);
 
     //* save refresh token to the db
-    await this.repositoryService.addRefreshToken(
+    await this.tokenRepoService.addRefreshToken(
       user._id as string,
       hashedRefreshToken,
     );
 
-    await this.repositoryService.trimRefreshTokens(String(user._id), 5);
+    await this.tokenRepoService.trimRefreshTokens(String(user._id));
 
     if (user.isDeletionPending) {
-      await this.repositoryService.cancelScheduledDeletion(user._id as string);
+      await this.userCrudRepoService.cancelScheduledDeletion(
+        user._id as string,
+      );
     }
 
     await this.redis.del(key);
@@ -103,7 +109,7 @@ export class AppService {
         await this.refreshTokenService.verifyAsync(refresh_token);
 
       //get the user
-      const user = await this.repositoryService.findOne(payload.sub);
+      const user = await this.userCrudRepoService.findOne(payload.sub);
       //iterate over its refreshTokens
       if (!user) throw new UnauthorizedException('Invalid refresh token');
       for (const hashedToken of user.refreshTokens) {
@@ -114,7 +120,7 @@ export class AppService {
         );
         if (isMatch) {
           //removed the token from the db
-          await this.repositoryService.removeRefreshToken(
+          await this.tokenRepoService.removeRefreshToken(
             payload.sub, //
             hashedToken,
           );
@@ -127,7 +133,7 @@ export class AppService {
   }
 
   async globalLogout(id: string) {
-    await this.repositoryService.clearTokens(id);
+    await this.tokenRepoService.clearTokens(id);
   }
 
   // creates both new access and refresh tokens
@@ -137,7 +143,7 @@ export class AppService {
     try {
       const refreshPayload: JwtPayload =
         await this.refreshTokenService.verifyAsync(refresh_token);
-      const user = await this.repositoryService.findOne(refreshPayload.sub);
+      const user = await this.userCrudRepoService.findOne(refreshPayload.sub);
 
       if (!user) throw new UnauthorizedException('Invalid refresh token');
 
@@ -163,7 +169,7 @@ export class AppService {
         );
         if (isMatch) {
           validTokenFound = true;
-          await this.repositoryService.replaceRefreshToken(
+          await this.tokenRepoService.replaceRefreshToken(
             user._id as string,
             hashedToken,
             newHashedRefreshToken,
@@ -195,7 +201,7 @@ export class AppService {
       throw new Error('New password cannot be the same as the old one');
     }
 
-    const user = await this.repositoryService.findOne(id);
+    const user = await this.userCrudRepoService.findOne(id);
     if (!user) {
       throw new ConflictException('The user of the given email doesn`t exist');
     }
@@ -209,7 +215,7 @@ export class AppService {
     }
 
     const hashedNewPassword = await this.hashService.hash(newPassword);
-    await this.repositoryService.updatePasswordAndClearTokens(
+    await this.passwordRepoService.updatePasswordAndClearTokens(
       user.email,
       hashedNewPassword,
     );
@@ -217,7 +223,7 @@ export class AppService {
 
   async markForDeletion(id: string, password: string) {
     // TODO: add a cron job for deleting accounts after the deletionScheduledAt time
-    const user = await this.repositoryService.findOne(id);
+    const user = await this.userCrudRepoService.findOne(id);
     if (!user) {
       throw new ConflictException('The user of the given email doesn`t exist');
     }
@@ -230,7 +236,7 @@ export class AppService {
       throw new UnauthorizedException('Current password is incorrect');
     }
     const deletionScheduledAt = Date.now() + account_deletion_lifespan;
-    await this.repositoryService.markUserForDeletion(
+    await this.userCrudRepoService.markUserForDeletion(
       user.email,
       deletionScheduledAt,
     );
