@@ -38,15 +38,27 @@ export class ProtectedController {
   ) {}
 
   @Roles(Role.ADMIN)
-  @Get('user')
-  async getUser(
-    @Query('id') id: string,
-    @Query('email') email: string,
-  ): Promise<SafeUserDto | null> {
-    let user: UserDocument | null;
+  @Get('user/id/:id')
+  async getUserById(@Param('id') id: string): Promise<SafeUserDto | null> {
+    const user: UserDocument | null = await this.repositoryService.findOne(id);
 
-    if (id) user = await this.repositoryService.findOne(id);
-    user = await this.repositoryService.findOneByEmail(email);
+    if (!user) throw new NotFoundException('User not found');
+
+    return {
+      _id: user._id as string,
+      email: user.email,
+      roles: user.roles,
+      isVerified: user.isVerified,
+    };
+  }
+
+  @Roles(Role.ADMIN)
+  @Get('user/email/:email')
+  async getUserByMail(
+    @Param('email') email: string,
+  ): Promise<SafeUserDto | null> {
+    const user: UserDocument | null =
+      await this.repositoryService.findOneByEmail(email);
 
     if (!user) throw new NotFoundException('User not found');
 
