@@ -72,7 +72,7 @@ export class MailService {
       return;
     }
 
-    const hashedPassword = await this.hashService.hash(password); // 10 salt rounds
+    const hashedPassword = await this.hashService.hash(password);
     const verificationToken = randomUUID();
     const verificationTokenExpires = Date.now() + account_verification_lifespan;
 

@@ -27,6 +27,10 @@ export class RepositoryService {
     );
   }
 
+  async changePassword(_id: string, password: string) {
+    await this.userModel.updateOne({ _id }, { $set: { password } });
+  }
+
   async insertOne({
     email,
     password,
