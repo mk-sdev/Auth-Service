@@ -1,6 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
-import { Role } from 'src/utils/interfaces';
+import { Role } from '../utils/interfaces';
+import { Provider } from '../utils/interfaces';
 
 export type UserDocument = User & Document;
 
@@ -17,14 +18,17 @@ export class User {
   })
   email: string;
 
-  @Prop({ required: true })
-  password: string;
+  @Prop()
+  password?: string; // !optional, because of OAuth2
 
   @Prop({ type: [String], enum: Role, default: [Role.USER] })
   roles: Role[];
 
   @Prop({ default: [] })
   refreshTokens: string[];
+
+  @Prop({ type: String, enum: Provider, default: Provider.LOCAL })
+  provider: Provider;
 
   // * for the registration
 

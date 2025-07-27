@@ -3,6 +3,7 @@ import { IUserCrud } from './interfaces/iUserCrud';
 import { MongoUserCrudService } from './mongo/mongoUserCrud.service';
 import { SafeUserDto } from '../dtos/safeUser.dto';
 import { UserDocument } from './user.schema';
+import { Provider } from '../utils/interfaces';
 
 @Injectable()
 export class UserCrudRepoService implements IUserCrud {
@@ -42,13 +43,20 @@ export class UserCrudRepoService implements IUserCrud {
     password: string;
     verificationToken: string;
     verificationTokenExpires: number;
-  }): Promise<void> {
+  }): Promise<UserDocument> {
     return this.repoService.insertOne({
       email,
       password,
       verificationToken,
       verificationTokenExpires,
     });
+  }
+
+  async insertOne_OAuth(
+    email: string,
+    provider: Provider,
+  ): Promise<UserDocument> {
+    return await this.repoService.insertOne_OAuth(email, provider);
   }
 
   async moderateUser(

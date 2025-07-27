@@ -15,3 +15,8 @@ export interface JwtPayload {
 export interface UserRequest extends Request {
   user?: JwtPayload;
 }
+
+export enum Provider {
+  LOCAL = 'local',
+  GOOGLE = 'google',
+}

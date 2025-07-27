@@ -134,7 +134,7 @@ export class MailingService {
     }
 
     const isPasswordValid: boolean = await this.hashService.verify(
-      user.password,
+      user.password!,
       password,
     );
     if (!isPasswordValid) {

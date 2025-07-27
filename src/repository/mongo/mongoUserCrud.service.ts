@@ -32,12 +32,23 @@ export class MongoUserCrudService implements IUserCrud {
     password: string;
     verificationToken: string;
     verificationTokenExpires: number;
-  }): Promise<void> {
-    await this.userModel.create({
+  }): Promise<UserDocument> {
+    return await this.userModel.create({
       email,
       password,
       verificationToken,
       verificationTokenExpires,
+    });
+  }
+
+  async insertOne_OAuth(
+    email: string,
+    provider: string,
+  ): Promise<UserDocument> {
+    return await this.userModel.create({
+      email,
+      provider,
+      isVerified: true,
     });
   }
 

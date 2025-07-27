@@ -66,7 +66,7 @@ export class CoreService {
     if (password) {
       //* check if the password matches
       const isPasswordValid: boolean = await this.hashService.verify(
-        user.password,
+        user.password!,
         password,
       );
 
@@ -211,7 +211,7 @@ export class CoreService {
     }
 
     const isPasswordValid = await this.hashService.verify(
-      user.password,
+      user.password!,
       currentPassword,
     );
     if (!isPasswordValid) {
@@ -233,7 +233,7 @@ export class CoreService {
     }
 
     const isPasswordValid = await this.hashService.verify(
-      user.password,
+      user.password!, //! what if user has no password? (OAuth)
       password,
     );
     if (!isPasswordValid) {

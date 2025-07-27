@@ -1,3 +1,4 @@
+import { Provider } from '../../utils/interfaces';
 import { SafeUserDto } from '../../dtos/safeUser.dto';
 import { UserDocument } from '../user.schema';
 
@@ -15,7 +16,8 @@ export interface IUserCrud {
     password: string;
     verificationToken: string;
     verificationTokenExpires: number;
-  }): Promise<void>;
+  }): Promise<UserDocument>;
+  insertOne_OAuth(email: string, provider: Provider): Promise<UserDocument>;
   moderateUser(
     _id: string,
     { email, roles, isVerified }: Omit<SafeUserDto, '_id'>,
