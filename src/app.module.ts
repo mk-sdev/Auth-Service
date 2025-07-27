@@ -1,18 +1,15 @@
 import { MailerModule } from '@nestjs-modules/mailer';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { APP_GUARD } from '@nestjs/core';
 import { JwtModule } from '@nestjs/jwt';
 import { MongooseModule } from '@nestjs/mongoose';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
-import { TokensModule } from './utils/tokens.module';
-import { MailingModule } from './mailing/mailing.module';
-import { RepositoryModule } from './repository/repository.module';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
-import { APP_GUARD } from '@nestjs/core';
-import { HashService } from './utils/hash.service';
+import { CoreModule } from './core/core.module';
 import { ProtectedModule } from './protected/protected.module';
+import { RepositoryModule } from './repository/repository.module';
 import { RedisModule } from './utils/redis.module';
+import { TokensModule } from './utils/tokens.module';
 
 @Module({
   imports: [
@@ -44,15 +41,12 @@ import { RedisModule } from './utils/redis.module';
     }),
     RepositoryModule,
     TokensModule,
-    MailingModule,
+    CoreModule,
     JwtModule,
     ProtectedModule,
     RedisModule,
   ],
-  controllers: [AppController],
   providers: [
-    HashService,
-    AppService,
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,

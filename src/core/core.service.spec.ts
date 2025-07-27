@@ -1,12 +1,12 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { AppService } from './app.service';
-import { RepositoryService } from './repository/repository.service';
-import { MailingService } from './mailing/mailing.service';
-import { JwtPayload } from './utils/interfaces';
-import { HashService } from './utils/hash.service';
+import { CoreService } from './core.service';
+import { RepositoryService } from '../repository/repository.service';
+import { MailingService } from '../core/mailing.service';
+import { JwtPayload } from '../utils/interfaces';
+import { HashService } from './hash.service';
 
-describe('AppService', () => {
-  let appService: AppService;
+describe('CoreService', () => {
+  let appService: CoreService;
 
   const mockUserRepo = {
     findOne: jest.fn(),
@@ -34,7 +34,7 @@ describe('AppService', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        AppService,
+        CoreService,
         {
           provide: RepositoryService,
           useValue: mockUserRepo,
@@ -58,7 +58,7 @@ describe('AppService', () => {
       ],
     }).compile();
 
-    appService = module.get<AppService>(AppService);
+    appService = module.get<CoreService>(CoreService);
   });
 
   afterEach(() => {

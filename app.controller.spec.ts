@@ -1,11 +1,11 @@
 import { ValidationPipe } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { AppController } from './app.controller';
-import { AppService } from './app.service';
-import { ChangePasswordDto } from './dtos/changePassword.dto';
-import { JwtGuard } from './guards/jwt.guard';
-import { RegisterDto } from './dtos/register.dto';
-import { LoginDto } from './dtos/login.dto';
+import { CoreService } from './src/core/core.service';
+import { ChangePasswordDto } from './src/dtos/changePassword.dto';
+import { JwtGuard } from './src/guards/jwt.guard';
+import { RegisterDto } from './src/dtos/register.dto';
+import { LoginDto } from './src/dtos/login.dto';
 
 describe('AppController (integration)', () => {
   let controller: AppController;
@@ -15,7 +15,7 @@ describe('AppController (integration)', () => {
       controllers: [AppController],
       providers: [
         {
-          provide: AppService,
+          provide: CoreService,
           useValue: {},
         },
       ],

@@ -1,12 +1,12 @@
 import { Module } from '@nestjs/common';
-import { ProtectedController } from './protected.controller';
+import { CoreModule } from 'src/core/core.module';
 import { RepositoryModule } from '../repository/repository.module';
 import { TokensModule } from '../utils/tokens.module';
-import { HashService } from '../utils/hash.service';
+import { ProtectedController } from './protected.controller';
 
 @Module({
-  imports: [RepositoryModule, TokensModule],
+  imports: [CoreModule, RepositoryModule, TokensModule],
   controllers: [ProtectedController],
-  providers: [HashService],
+  // providers: [HashService],
 })
 export class ProtectedModule {}

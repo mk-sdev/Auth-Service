@@ -6,17 +6,17 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import Redis from 'ioredis';
-import { HashService } from './utils/hash.service';
-import { PasswordRepoService } from './repository/passwordRepo.service';
-import { TokenRepoService } from './repository/tokenRepo.service';
-import { UserCrudRepoService } from './repository/userCrudRepo.service';
-import { account_deletion_lifespan } from './utils/constants';
-import { JwtPayload } from './utils/interfaces';
+import { HashService } from './hash.service';
+import { PasswordRepoService } from '../repository/passwordRepo.service';
+import { TokenRepoService } from '../repository/tokenRepo.service';
+import { UserCrudRepoService } from '../repository/userCrudRepo.service';
+import { account_deletion_lifespan } from '../utils/constants';
+import { JwtPayload } from '../utils/interfaces';
 
 type NewPayload = Omit<JwtPayload, 'iat' | 'exp'>;
 
 @Injectable()
-export class AppService {
+export class CoreService {
   constructor(
     private readonly passwordRepoService: PasswordRepoService,
     private readonly tokenRepoService: TokenRepoService,
@@ -27,11 +27,13 @@ export class AppService {
     private readonly refreshTokenService: JwtService,
     private readonly hashService: HashService,
     @Inject('REDIS_CLIENT') private readonly redis: Redis,
-  ) {}
+  ) {
+    console.log('[CoreService] constructed');
+  }
 
   async login(
     email: string,
-    password: string,
+    password?: string, // when logging via OAuth password is not needed
   ): Promise<{ access_token: string; refresh_token: string }> {
     const key = `login_attempts:${email}`;
     const ttlSeconds = 60 * 5; // 5 minutes
@@ -61,14 +63,16 @@ export class AppService {
       );
     }
 
-    //* check if the password matches
-    const isPasswordValid: boolean = await this.hashService.verify(
-      user.password,
-      password,
-    );
+    if (password) {
+      //* check if the password matches
+      const isPasswordValid: boolean = await this.hashService.verify(
+        user.password,
+        password,
+      );
 
-    if (!isPasswordValid) {
-      throw new UnauthorizedException();
+      if (!isPasswordValid) {
+        throw new UnauthorizedException();
+      }
     }
     //* if the user is found and the password matches, generate a JWT token and send it back
     const payload: NewPayload = {

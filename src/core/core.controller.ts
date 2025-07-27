@@ -15,12 +15,12 @@ import {
   ValidationPipe,
 } from '@nestjs/common';
 import { Response } from 'express';
-import { AppService } from './app.service';
-import { Id } from './decorators/id.decorator';
-import { ChangePasswordDto } from './dtos/changePassword.dto';
-import { LoginDto } from './dtos/login.dto';
-import { JwtGuard } from './guards/jwt.guard';
-import { LoggingInterceptor } from './utils/logging.interceptor';
+import { CoreService } from './core.service';
+import { Id } from '../decorators/id.decorator';
+import { ChangePasswordDto } from '../dtos/changePassword.dto';
+import { LoginDto } from '../dtos/login.dto';
+import { JwtGuard } from '../guards/jwt.guard';
+import { LoggingInterceptor } from '../utils/logging.interceptor';
 
 @Controller()
 @UsePipes(
@@ -29,8 +29,8 @@ import { LoggingInterceptor } from './utils/logging.interceptor';
     forbidNonWhitelisted: true, // throws exceptions if encounters additional attributes
   }),
 )
-export class AppController {
-  constructor(private readonly appService: AppService) {}
+export class CoreController {
+  constructor(private readonly appService: CoreService) {}
 
   @Get('hello')
   getHello(): string {

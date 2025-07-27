@@ -18,7 +18,7 @@ import { RolesGuard } from '../guards/roles.guard';
 // import { RepositoryService } from '../repository/repository.service';
 import { LoginDto } from '../dtos/login.dto';
 import { SafeUserDto } from '../dtos/safeUser.dto';
-import { HashService } from '../utils/hash.service';
+import { HashService } from '../core/hash.service';
 import { PasswordRepoService } from '../repository/passwordRepo.service';
 import { TokenRepoService } from '../repository/tokenRepo.service';
 import { UserDocument } from '../repository/user.schema';
