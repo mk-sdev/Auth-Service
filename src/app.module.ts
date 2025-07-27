@@ -10,6 +10,7 @@ import { ProtectedModule } from './protected/protected.module';
 import { RepositoryModule } from './repository/repository.module';
 import { RedisModule } from './utils/redis.module';
 import { TokensModule } from './utils/tokens.module';
+import { OAuthModule } from './oauth/oauth.module';
 
 @Module({
   imports: [
@@ -45,6 +46,7 @@ import { TokensModule } from './utils/tokens.module';
     JwtModule,
     ProtectedModule,
     RedisModule,
+    OAuthModule,
   ],
   providers: [
     {
