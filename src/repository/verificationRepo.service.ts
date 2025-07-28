@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { IVerification } from './interfaces/iVerification';
 import { MongoVerificationService } from './mongo/mongoVerification.service';
-import { UserDocument } from './user.schema';
+import { UserDocument } from './mongo/user.schema';
 
 @Injectable()
 export class VerificationRepoService implements IVerification {

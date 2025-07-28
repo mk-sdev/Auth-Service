@@ -1,11 +1,11 @@
 import { Provider } from '../../utils/interfaces';
 import { SafeUserDto } from '../../dtos/safeUser.dto';
-import { UserDocument } from '../user.schema';
+import { UserDocument } from '../mongo/user.schema';
 
 export interface IUserCrud {
   findOne(id: string): Promise<UserDocument | null>;
   findOneByEmail(email: string): Promise<UserDocument | null>;
-  getAllUsers();
+  getAllUsers(): Promise<UserDocument[] | null>;
   insertOne({
     email,
     password,
@@ -21,7 +21,7 @@ export interface IUserCrud {
   moderateUser(
     _id: string,
     { email, roles, isVerified }: Omit<SafeUserDto, '_id'>,
-  );
+  ): Promise<void>;
   verifyAccount(id: string): Promise<void>;
   confirmEmailChange(userId: string, newEmail: string): Promise<void>;
   cancelScheduledDeletion(userId: string): Promise<void>;

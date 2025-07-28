@@ -6,7 +6,7 @@ import { MongoUserCrudService } from './mongo/mongoUserCrud.service';
 import { MongoVerificationService } from './mongo/mongoVerification.service';
 import { PasswordRepoService } from './passwordRepo.service';
 import { TokenRepoService } from './tokenRepo.service';
-import { UserSchema } from './user.schema';
+import { UserSchema } from './mongo/user.schema';
 import { UserCrudRepoService } from './userCrudRepo.service';
 import { VerificationRepoService } from './verificationRepo.service';
 

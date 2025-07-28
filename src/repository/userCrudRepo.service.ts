@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { IUserCrud } from './interfaces/iUserCrud';
 import { MongoUserCrudService } from './mongo/mongoUserCrud.service';
 import { SafeUserDto } from '../dtos/safeUser.dto';
-import { UserDocument } from './user.schema';
+import { UserDocument } from './mongo/user.schema';
 import { Provider } from '../utils/interfaces';
 
 @Injectable()
@@ -63,7 +63,7 @@ export class UserCrudRepoService implements IUserCrud {
     _id: string,
     data: Omit<SafeUserDto, '_id'>,
   ): Promise<void> {
-    return this.repoService.moderateUser(_id, data);
+    await this.repoService.moderateUser(_id, data);
   }
 
   async verifyAccount(id: string): Promise<void> {

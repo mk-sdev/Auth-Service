@@ -21,7 +21,7 @@ import { SafeUserDto } from '../dtos/safeUser.dto';
 import { HashService } from '../core/hash.service';
 import { PasswordRepoService } from '../repository/passwordRepo.service';
 import { TokenRepoService } from '../repository/tokenRepo.service';
-import { UserDocument } from '../repository/user.schema';
+import { UserDocument } from '../repository/mongo/user.schema';
 import { UserCrudRepoService } from '../repository/userCrudRepo.service';
 import { Role } from '../utils/interfaces';
 

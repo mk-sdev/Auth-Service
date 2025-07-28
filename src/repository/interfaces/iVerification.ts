@@ -1,4 +1,4 @@
-import { UserDocument } from '../user.schema';
+import { UserDocument } from '../mongo/user.schema';
 
 export interface IVerification {
   setNewVerificationToken(

@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { UserDocument } from 'src/repository/user.schema';
+import { UserDocument } from '../repository/mongo/user.schema';
 import { UserCrudRepoService } from '../repository/userCrudRepo.service';
 import { CoreService } from '../core/core.service';
 import { Provider } from '../utils/interfaces';
