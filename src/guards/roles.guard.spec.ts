@@ -40,14 +40,14 @@ describe('RolesGuard', () => {
   it('should allow access if user has at least one matching role', () => {
     jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue([Role.ADMIN]);
 
-    const context = mockExecutionContext([Role.ADMIN, Role.MODERATOR]);
+    const context = mockExecutionContext([Role.ADMIN, Role.USER]);
     expect(guard.canActivate(context)).toBe(true);
   });
 
   it('should deny access if user has no matching role', () => {
     jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue([Role.ADMIN]);
 
-    const context = mockExecutionContext([Role.MODERATOR]);
+    const context = mockExecutionContext([Role.USER]);
 
     expect(() => guard.canActivate(context)).toThrow(UnauthorizedException);
   });
