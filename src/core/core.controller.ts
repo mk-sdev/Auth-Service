@@ -30,7 +30,7 @@ import { LoggingInterceptor } from '../utils/logging.interceptor';
   }),
 )
 export class CoreController {
-  constructor(private readonly appService: CoreService) {}
+  constructor(private readonly coreService: CoreService) {}
 
   @Get('hello')
   getHello(): string {
@@ -44,7 +44,7 @@ export class CoreController {
     @Body() loginDto: LoginDto,
     @Res({ passthrough: true }) response: Response,
   ) {
-    const { access_token, refresh_token } = await this.appService.login(
+    const { access_token, refresh_token } = await this.coreService.login(
       loginDto.email,
       loginDto.password,
     );
@@ -61,7 +61,7 @@ export class CoreController {
   @UseGuards(JwtGuard)
   async logout(@Body() body: { refresh_token: string }) {
     const { refresh_token } = body;
-    await this.appService.logout(refresh_token);
+    await this.coreService.logout(refresh_token);
     return { message: 'Logout successful' };
   }
 
@@ -69,14 +69,14 @@ export class CoreController {
   @HttpCode(HttpStatus.OK)
   @UseGuards(JwtGuard)
   async globalLogout(@Id() id: string) {
-    await this.appService.globalLogout(id);
+    await this.coreService.globalLogout(id);
   }
 
   @Patch('refresh')
   @HttpCode(HttpStatus.OK)
   async refresh(@Body() body: { refresh_token: string }) {
     const { refresh_token } = body;
-    const refreshed = await this.appService.refreshTokens(
+    const refreshed = await this.coreService.refreshTokens(
       // access_token,
       refresh_token,
     );
@@ -91,14 +91,23 @@ export class CoreController {
   @Patch('change-password')
   @UseGuards(JwtGuard)
   async changePassword(@Id() id: string, @Body() body: ChangePasswordDto) {
-    return this.appService.changePassword(id, body.password, body.newPassword);
+    return this.coreService.changePassword(id, body.password, body.newPassword);
+  }
+
+  @Patch('set-password')
+  @UseGuards(JwtGuard)
+  async setPassword(
+    @Id() id: string,
+    @Body() body: Omit<ChangePasswordDto, 'password'>,
+  ) {
+    return this.coreService.setPassword(id, body.newPassword);
   }
 
   @Delete('delete-account')
   @HttpCode(HttpStatus.OK)
   @UseGuards(JwtGuard)
   async deleteAccount(@Id() id: string, @Body() body: { password: string }) {
-    await this.appService.markForDeletion(id, body.password);
+    await this.coreService.markForDeletion(id, body.password);
   }
 
   //* dev

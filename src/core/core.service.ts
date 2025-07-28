@@ -225,6 +225,24 @@ export class CoreService {
     );
   }
 
+  async setPassword(id: string, password: string) {
+    const user = await this.userCrudRepoService.findOne(id);
+    if (!user) {
+      throw new ConflictException('The user of the given email doesn`t exist');
+    }
+    if (user.password) {
+      throw new ConflictException(
+        'The user has a password. Use /change-password instead.',
+      );
+    }
+
+    const hashedNewPassword = await this.hashService.hash(password);
+    await this.passwordRepoService.updatePasswordAndClearTokens(
+      user.email,
+      hashedNewPassword,
+    );
+  }
+
   async markForDeletion(id: string, password: string) {
     // TODO: add a cron job for deleting accounts after the deletionScheduledAt time
     const user = await this.userCrudRepoService.findOne(id);
@@ -232,13 +250,16 @@ export class CoreService {
       throw new ConflictException('The user of the given email doesn`t exist');
     }
 
-    const isPasswordValid = await this.hashService.verify(
-      user.password!, //! what if user has no password? (OAuth)
-      password,
-    );
-    if (!isPasswordValid) {
-      throw new UnauthorizedException('Current password is incorrect');
+    if (user.password) {
+      const isPasswordValid = await this.hashService.verify(
+        user.password,
+        password,
+      );
+      if (!isPasswordValid) {
+        throw new UnauthorizedException('Current password is incorrect');
+      }
     }
+
     const deletionScheduledAt = Date.now() + account_deletion_lifespan;
     await this.userCrudRepoService.markUserForDeletion(
       user.email,
