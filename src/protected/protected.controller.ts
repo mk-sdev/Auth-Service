@@ -54,6 +54,7 @@ export class ProtectedController {
       email: user.email,
       roles: user.roles,
       isVerified: user.isVerified,
+      provider: user.provider,
     };
   }
 
@@ -72,6 +73,7 @@ export class ProtectedController {
       email: user.email,
       roles: user.roles,
       isVerified: user.isVerified,
+      provider: user.provider,
     };
   }
 

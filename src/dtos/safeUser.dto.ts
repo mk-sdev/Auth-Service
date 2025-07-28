@@ -8,7 +8,7 @@ import {
   IsNotEmpty,
   IsString,
 } from 'class-validator';
-import { Role } from '../utils/interfaces';
+import { Provider, Role } from '../utils/interfaces';
 
 // dto without sensitive data; therefore it's "safe"
 export class SafeUserDto {
@@ -27,4 +27,7 @@ export class SafeUserDto {
 
   @IsBoolean({ message: 'isVerified must be a boolean' })
   isVerified: boolean;
+
+  @IsEnum(Provider)
+  provider: Provider;
 }
