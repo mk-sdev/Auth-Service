@@ -8,6 +8,8 @@ import {
   Param,
   Patch,
   Put,
+  Req,
+  Res,
   UseGuards,
   UseInterceptors,
   UsePipes,
@@ -27,6 +29,8 @@ import { UserCrudRepoService } from '../repository/userCrudRepo.service';
 import { Role } from '../utils/interfaces';
 import { AuditInterceptor } from '../utils/audit/audit.interceptor';
 import { AuditAction } from '../decorators/audit-action.decorator';
+import { CoreService } from 'src/core/core.service';
+import { Request, Response } from 'express';
 
 @UseGuards(JwtGuard, RolesGuard)
 @UseInterceptors(AuditInterceptor)
@@ -43,7 +47,28 @@ export class ProtectedController {
     private readonly tokenRepoService: TokenRepoService,
     private readonly userCrudRepoService: UserCrudRepoService,
     private readonly hashService: HashService,
+    private readonly coreService: CoreService,
   ) {}
+
+  @Roles(Role.ADMIN)
+  @AuditAction('LOGIN', 'admin')
+  @Patch('login')
+  async login(
+    @Body() loginDto: LoginDto,
+    @Res({ passthrough: true }) response: Response,
+    @Req() req: Request,
+  ) {
+    const { access_token, refresh_token } = await this.coreService.login(
+      loginDto.email,
+      req,
+      loginDto.password,
+    );
+
+    response.setHeader('Authorization', `Bearer ${access_token}`);
+    // response.setHeader('X-Refresh-Token', refresh_token);
+
+    return { message: 'Login successful', refresh_token };
+  }
 
   @Roles(Role.ADMIN)
   @Get('user/id/:id')
