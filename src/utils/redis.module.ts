@@ -1,5 +1,6 @@
 // redis.module.ts
 import { Global, Module } from '@nestjs/common';
+import { HashModule } from './hash/hash.module';
 import Redis from 'ioredis';
 
 @Global()

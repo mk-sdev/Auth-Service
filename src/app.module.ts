@@ -12,6 +12,7 @@ import { RedisModule } from './utils/redis.module';
 import { TokensModule } from './utils/tokens.module';
 import { OAuthModule } from './oauth/oauth.module';
 import { AuditModule } from './utils/audit/audit.module';
+import { HashModule } from './utils/hash/hash.module';
 
 @Module({
   imports: [
@@ -49,6 +50,7 @@ import { AuditModule } from './utils/audit/audit.module';
     RedisModule,
     OAuthModule,
     AuditModule,
+    HashModule,
   ],
   providers: [
     {

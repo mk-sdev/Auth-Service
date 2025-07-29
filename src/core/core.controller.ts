@@ -22,7 +22,7 @@ import { ChangePasswordDto } from '../dtos/changePassword.dto';
 import { LoginDto } from '../dtos/login.dto';
 import { JwtGuard } from '../guards/jwt.guard';
 import { AuditInterceptor } from '../utils/audit/audit.interceptor';
-import { LoggingInterceptor } from '../utils/logging.interceptor';
+import { HashInterceptor } from '../utils/hash/hash.interceptor';
 import { CoreService } from './core.service';
 
 @Controller()
@@ -45,7 +45,7 @@ export class CoreController {
 
   @Patch('login')
   @AuditAction('LOGIN')
-  @UseInterceptors(LoggingInterceptor)
+  @UseInterceptors(HashInterceptor)
   @HttpCode(HttpStatus.OK)
   async signIn(
     @Body() loginDto: LoginDto,
@@ -65,7 +65,7 @@ export class CoreController {
   }
 
   @Patch('logout')
-  @UseInterceptors(LoggingInterceptor)
+  @UseInterceptors(HashInterceptor)
   @HttpCode(HttpStatus.OK)
   @UseGuards(JwtGuard)
   async logout(@Body() body: { refresh_token: string }) {

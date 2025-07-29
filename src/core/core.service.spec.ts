@@ -3,7 +3,7 @@ import { CoreService } from './core.service';
 import { RepositoryService } from '../repository/repository.service';
 import { MailingService } from '../core/mailing.service';
 import { JwtPayload } from '../utils/interfaces';
-import { HashService } from './hash.service';
+import { HashService } from '../utils/hash/hash.service';
 
 describe('CoreService', () => {
   let appService: CoreService;
