@@ -4,7 +4,7 @@ services:
   loki:
     image: grafana/loki:latest
     ports:
-      - "3101:3100"
+      - '3101:3100'
     command: -config.file=/etc/loki/local-config.yaml
 
   promtail:
@@ -19,7 +19,7 @@ services:
   grafana:
     image: grafana/grafana
     ports:
-      - "3001:3000"
+      - '3001:3000'
     volumes:
       - grafana-storage:/var/lib/grafana
     environment:
@@ -27,5 +27,22 @@ services:
     depends_on:
       - loki
 
+  redis:
+    image: redis
+    ports: 
+      - 6379:6379
+
+  mongo:
+    image: mongo:6.0
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: examplepassword
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+
 volumes:
+  mongo-data:
   grafana-storage:
