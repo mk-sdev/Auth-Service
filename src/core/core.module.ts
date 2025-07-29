@@ -6,11 +6,12 @@ import { TokensModule } from '../utils/tokens.module';
 import { HashService } from './hash.service';
 import { CoreController } from './core.controller';
 import { CoreService } from './core.service';
+import { AuditLoggerService } from '../utils/logger';
 
 @Module({
   imports: [RepositoryModule, TokensModule],
   controllers: [CoreController, MailingController],
-  providers: [CoreService, MailingService, HashService],
+  providers: [CoreService, MailingService, HashService, AuditLoggerService],
   exports: [HashService, CoreService],
 })
 export class CoreModule {}

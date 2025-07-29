@@ -6,6 +6,7 @@ import {
   Headers,
   HttpCode,
   HttpStatus,
+  Logger,
   Patch,
   Res,
   UnauthorizedException,
@@ -21,6 +22,7 @@ import { ChangePasswordDto } from '../dtos/changePassword.dto';
 import { LoginDto } from '../dtos/login.dto';
 import { JwtGuard } from '../guards/jwt.guard';
 import { LoggingInterceptor } from '../utils/logging.interceptor';
+import { AuditLoggerService } from '../utils/logger';
 
 @Controller()
 @UsePipes(
@@ -30,10 +32,14 @@ import { LoggingInterceptor } from '../utils/logging.interceptor';
   }),
 )
 export class CoreController {
-  constructor(private readonly coreService: CoreService) {}
+  constructor(
+    private readonly coreService: CoreService,
+    private readonly logger: AuditLoggerService,
+  ) {}
 
   @Get('hello')
   getHello(): string {
+    this.logger.log('-', 'hello');
     return 'Hello World!';
   }
 
