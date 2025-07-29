@@ -6,8 +6,8 @@ import {
   Headers,
   HttpCode,
   HttpStatus,
-  Logger,
   Patch,
+  Req,
   Res,
   UnauthorizedException,
   UseGuards,
@@ -15,16 +15,18 @@ import {
   UsePipes,
   ValidationPipe,
 } from '@nestjs/common';
-import { Response } from 'express';
-import { CoreService } from './core.service';
+import { Request, Response } from 'express';
+import { AuditAction } from '../decorators/audit-action.decorator';
 import { Id } from '../decorators/id.decorator';
 import { ChangePasswordDto } from '../dtos/changePassword.dto';
 import { LoginDto } from '../dtos/login.dto';
 import { JwtGuard } from '../guards/jwt.guard';
+import { AuditInterceptor } from '../utils/audit/audit.interceptor';
 import { LoggingInterceptor } from '../utils/logging.interceptor';
-import { AuditLoggerService } from '../utils/logger';
+import { CoreService } from './core.service';
 
 @Controller()
+@UseInterceptors(AuditInterceptor)
 @UsePipes(
   new ValidationPipe({
     whitelist: true, // deletes additional attributes
@@ -32,26 +34,27 @@ import { AuditLoggerService } from '../utils/logger';
   }),
 )
 export class CoreController {
-  constructor(
-    private readonly coreService: CoreService,
-    private readonly logger: AuditLoggerService,
-  ) {}
+  constructor(private readonly coreService: CoreService) {}
 
   @Get('hello')
+  @AuditAction('HELLO')
   getHello(): string {
-    this.logger.log('-', 'hello');
+    // this.logger.log('-', 'hello');
     return 'Hello World!';
   }
 
   @Patch('login')
+  @AuditAction('LOGIN')
   @UseInterceptors(LoggingInterceptor)
   @HttpCode(HttpStatus.OK)
   async signIn(
     @Body() loginDto: LoginDto,
     @Res({ passthrough: true }) response: Response,
+    @Req() req: Request,
   ) {
     const { access_token, refresh_token } = await this.coreService.login(
       loginDto.email,
+      req,
       loginDto.password,
     );
 
@@ -95,25 +98,42 @@ export class CoreController {
   }
 
   @Patch('change-password')
+  @AuditAction('CHANGE_PASSWORD')
   @UseGuards(JwtGuard)
-  async changePassword(@Id() id: string, @Body() body: ChangePasswordDto) {
-    return this.coreService.changePassword(id, body.password, body.newPassword);
+  async changePassword(
+    @Id() id: string,
+    @Body() body: ChangePasswordDto,
+    @Req() req: Request,
+  ) {
+    return this.coreService.changePassword(
+      id,
+      body.password,
+      body.newPassword,
+      req,
+    );
   }
 
   @Patch('set-password')
+  @AuditAction('SET_PASSWORD')
   @UseGuards(JwtGuard)
   async setPassword(
     @Id() id: string,
     @Body() body: Omit<ChangePasswordDto, 'password'>,
+    @Req() req: Request,
   ) {
-    return this.coreService.setPassword(id, body.newPassword);
+    return this.coreService.setPassword(id, body.newPassword, req);
   }
 
   @Delete('delete-account')
+  @AuditAction('DELETE_ACCOUNT')
   @HttpCode(HttpStatus.OK)
   @UseGuards(JwtGuard)
-  async deleteAccount(@Id() id: string, @Body() body: { password: string }) {
-    await this.coreService.markForDeletion(id, body.password);
+  async deleteAccount(
+    @Id() id: string,
+    @Body() body: { password: string },
+    @Req() req: Request,
+  ) {
+    await this.coreService.markForDeletion(id, body.password, req);
   }
 
   //* dev

@@ -8,7 +8,9 @@ import {
   Patch,
   Post,
   Query,
+  Req,
   UseGuards,
+  UseInterceptors,
   UsePipes,
   ValidationPipe,
 } from '@nestjs/common';
@@ -19,9 +21,13 @@ import { ResetPasswordDto } from '../dtos/resetPassword.dto';
 import { Id } from '../decorators/id.decorator';
 import { JwtGuard } from '../guards/jwt.guard';
 import { MailingService } from './mailing.service';
+import { AuditInterceptor } from '../utils/audit/audit.interceptor';
+import { AuditAction } from '../decorators/audit-action.decorator';
+import { Request } from 'express';
 
 // * this controller handles mailing-related endpoints
 @Controller()
+@UseInterceptors(AuditInterceptor)
 @UsePipes(
   new ValidationPipe({
     whitelist: true, // deletes additional attributes
@@ -32,6 +38,7 @@ export class MailingController {
   constructor(private readonly mailService: MailingService) {}
 
   @Post('register')
+  @AuditAction('REGISTER')
   @HttpCode(HttpStatus.CREATED)
   async register(@Body() registerDto: RegisterDto) {
     const message = 'Verification link has been sent to your email address';
@@ -48,11 +55,16 @@ export class MailingController {
   }
 
   @Patch('change-email')
+  @AuditAction('CHANGE_EMAIL')
   @UseGuards(JwtGuard)
-  async changeEmail(@Id() id: string, @Body() body: ChangeEmailDto) {
+  async changeEmail(
+    @Id() id: string,
+    @Body() body: ChangeEmailDto,
+    @Req() req: Request,
+  ) {
     const { newEmail, password } = body;
 
-    await this.mailService.changeEmail(id, newEmail, password);
+    await this.mailService.changeEmail(id, newEmail, password, req);
 
     return { message: 'Email address has been changed successfully' };
   }
@@ -69,20 +81,22 @@ export class MailingController {
   }
 
   @Patch('remind-password')
+  @AuditAction('REMIND_PASSWORD')
   @HttpCode(HttpStatus.OK)
-  async remindPassword(@Body() body: EmailDto) {
+  async remindPassword(@Body() body: EmailDto, @Req() req: Request) {
     const { email } = body;
 
     const message =
       'Password reset instruction has been sent to the email address provided';
 
-    await this.mailService.remindPassword(email, message);
+    await this.mailService.remindPassword(email, message, req);
     return {
       message,
     };
   }
 
   @Patch('reset-password')
+  @AuditAction('RESET_PASSWORD')
   async resetPassword(@Body() body: ResetPasswordDto) {
     return this.mailService.resetPassword(body.token, body.newPassword);
   }

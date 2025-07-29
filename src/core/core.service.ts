@@ -12,7 +12,9 @@ import { TokenRepoService } from '../repository/tokenRepo.service';
 import { UserCrudRepoService } from '../repository/userCrudRepo.service';
 import { account_deletion_lifespan } from '../utils/constants';
 import { JwtPayload } from '../utils/interfaces';
-
+import { AuditLoggerService } from 'src/utils/audit/audit.service';
+import { Request } from 'express';
+import { createAuditDetails } from 'src/utils/audit/audit-utils';
 type NewPayload = Omit<JwtPayload, 'iat' | 'exp'>;
 
 @Injectable()
@@ -27,12 +29,14 @@ export class CoreService {
     private readonly refreshTokenService: JwtService,
     private readonly hashService: HashService,
     @Inject('REDIS_CLIENT') private readonly redis: Redis,
+    private readonly auditLogger: AuditLoggerService,
   ) {
     console.log('[CoreService] constructed');
   }
 
   async login(
     email: string,
+    req: Request,
     password?: string, // when logging via OAuth password is not needed
   ): Promise<{ access_token: string; refresh_token: string }> {
     const key = `login_attempts:${email}`;
@@ -46,7 +50,16 @@ export class CoreService {
       await this.redis.expire(key, ttlSeconds);
     }
 
+    const { ip, path, method } = createAuditDetails(req);
+
     if (attempts > 5) {
+      this.auditLogger.warn('anonymous', 'LOGIN_RATE_LIMIT_EXCEEDED', {
+        ip,
+        path,
+        method,
+        email,
+        attempts,
+      });
       throw new UnauthorizedException(
         'Too many login attempts. Try again later.',
       );
@@ -54,10 +67,22 @@ export class CoreService {
 
     const user = await this.userCrudRepoService.findOneByEmail(email); //* find a user with a provided email
     if (!user) {
+      this.auditLogger.warn('anonymous', 'LOGIN_USER_NOT_FOUND', {
+        ip,
+        path,
+        method,
+        email,
+      });
       throw new UnauthorizedException();
     }
 
     if (!user.isVerified) {
+      this.auditLogger.warn(user._id as string, 'LOGIN_UNVERIFIED_USER', {
+        ip,
+        path,
+        method,
+        email,
+      });
       throw new UnauthorizedException(
         'Verify your account in order to sign in.',
       );
@@ -71,6 +96,12 @@ export class CoreService {
       );
 
       if (!isPasswordValid) {
+        this.auditLogger.warn(user._id as string, 'LOGIN_WRONG_PASSWORD', {
+          ip,
+          path,
+          method,
+          email,
+        });
         throw new UnauthorizedException();
       }
     }
@@ -200,13 +231,21 @@ export class CoreService {
     id: string,
     currentPassword: string,
     newPassword: string,
+    req: Request,
   ) {
     if (currentPassword === newPassword) {
       throw new Error('New password cannot be the same as the old one');
     }
 
+    const { ip, path, method } = createAuditDetails(req);
+
     const user = await this.userCrudRepoService.findOne(id);
     if (!user) {
+      this.auditLogger.warn(id, 'CHANGE_PASSWORD_USER_NOT_FOUND', {
+        ip,
+        path,
+        method,
+      });
       throw new ConflictException('The user of the given email doesn`t exist');
     }
 
@@ -215,6 +254,11 @@ export class CoreService {
       currentPassword,
     );
     if (!isPasswordValid) {
+      this.auditLogger.warn(id, 'CHANGE_PASSWORD_INVALID_PASSWORD', {
+        ip,
+        path,
+        method,
+      });
       throw new UnauthorizedException('Current password is incorrect');
     }
 
@@ -225,12 +269,25 @@ export class CoreService {
     );
   }
 
-  async setPassword(id: string, password: string) {
+  // FIXME: ? tu nie powinno być email zamiast id?
+  async setPassword(id: string, password: string, req: Request) {
+    const { ip, path, method } = createAuditDetails(req);
+
     const user = await this.userCrudRepoService.findOne(id);
     if (!user) {
-      throw new ConflictException('The user of the given email doesn`t exist');
+      this.auditLogger.warn(id, 'SET_PASSWORD_USER_NOT_FOUND', {
+        ip,
+        path,
+        method,
+      });
+      throw new ConflictException("The user of the given email doesn't exist");
     }
     if (user.password) {
+      this.auditLogger.warn(id, 'SET_PASSWORD_ALREADY_EXISTS', {
+        ip,
+        path,
+        method,
+      });
       throw new ConflictException(
         'The user has a password. Use /change-password instead.',
       );
@@ -243,10 +300,18 @@ export class CoreService {
     );
   }
 
-  async markForDeletion(id: string, password: string) {
+  // FIXME: ? tu nie powinno być email zamiast id?
+  async markForDeletion(id: string, password: string, req: Request) {
+    const { ip, path, method } = createAuditDetails(req);
+
     // TODO: add a cron job for deleting accounts after the deletionScheduledAt time
     const user = await this.userCrudRepoService.findOne(id);
     if (!user) {
+      this.auditLogger.warn(id, 'DELETE_ACCOUNT_USER_NOT_FOUND', {
+        ip,
+        path,
+        method,
+      });
       throw new ConflictException('The user of the given email doesn`t exist');
     }
 
@@ -256,6 +321,11 @@ export class CoreService {
         password,
       );
       if (!isPasswordValid) {
+        this.auditLogger.warn(id, 'DELETE_ACCOUNT_INVALID_PASSWORD', {
+          ip,
+          path,
+          method,
+        });
         throw new UnauthorizedException('Current password is incorrect');
       }
     }

@@ -19,6 +19,9 @@ import { HashService } from './hash.service';
 import { PasswordRepoService } from '../repository/passwordRepo.service';
 import { VerificationRepoService } from '../repository/verificationRepo.service';
 import { UserCrudRepoService } from '../repository/userCrudRepo.service';
+import { createAuditDetails } from 'src/utils/audit/audit-utils';
+import { Request } from 'express';
+import { AuditLoggerService } from 'src/utils/audit/audit.service';
 
 @Injectable()
 export class MailingService {
@@ -28,6 +31,7 @@ export class MailingService {
     private readonly userCrudRepoService: UserCrudRepoService,
     private readonly mailerService: MailerService,
     private readonly hashService: HashService,
+    private readonly auditLogger: AuditLoggerService,
   ) {}
 
   async sendMailWithToken(
@@ -125,9 +129,21 @@ export class MailingService {
     await this.userCrudRepoService.verifyAccount(user._id as string);
   }
 
-  async changeEmail(id: string, newEmail: string, password: string) {
+  async changeEmail(
+    id: string,
+    newEmail: string,
+    password: string,
+    req: Request,
+  ) {
+    const { ip, path, method } = createAuditDetails(req);
+
     const user = await this.userCrudRepoService.findOne(id);
     if (!user) {
+      this.auditLogger.warn(id, 'CHANGE_EMAIL_USER_NOT_FOUND', {
+        ip,
+        path,
+        method,
+      });
       throw new NotFoundException(
         'User with the given email address doesn`t exist',
       );
@@ -138,6 +154,11 @@ export class MailingService {
       password,
     );
     if (!isPasswordValid) {
+      this.auditLogger.warn(id, 'CHANGE_EMAIL_INVALID_PASSWORD', {
+        ip,
+        path,
+        method,
+      });
       throw new UnauthorizedException('Incorrect password');
     }
 
@@ -189,10 +210,18 @@ export class MailingService {
     );
   }
 
-  async remindPassword(email: string, message: string) {
+  async remindPassword(email: string, message: string, req: Request) {
+    const { ip, path, method } = createAuditDetails(req);
+
     const user = await this.userCrudRepoService.findOneByEmail(email);
 
     if (!user) {
+      this.auditLogger.warn('anonymous', 'REMIND_PASSWORD_USER_NOT_FOUND', {
+        ip,
+        path,
+        method,
+        email,
+      });
       // Do not do anything, in order to not to reveal the account exists in the database
       return {
         message,

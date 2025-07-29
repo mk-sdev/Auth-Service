@@ -19,9 +19,9 @@ export class OAuthController {
   async googleAuthRedirect(
     @Req() req,
     @Res() res: Response,
-    @Platform() platform: 'web' | 'mobile',
+    @Platform() platform: 'web' | 'mobile', //! this ALWAYS returns web
   ) {
-    const tokens = await this.oauthService.fn(req.user);
+    const tokens = await this.oauthService.fn(req.user, req);
 
     const REDIRECT_URI =
       platform === 'web' ? WEB_REDIRECT_URI : MOBILE_REDIRECT_URI;

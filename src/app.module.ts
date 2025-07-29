@@ -11,6 +11,7 @@ import { RepositoryModule } from './repository/repository.module';
 import { RedisModule } from './utils/redis.module';
 import { TokensModule } from './utils/tokens.module';
 import { OAuthModule } from './oauth/oauth.module';
+import { AuditModule } from './utils/audit/audit.module';
 
 @Module({
   imports: [
@@ -47,6 +48,7 @@ import { OAuthModule } from './oauth/oauth.module';
     ProtectedModule,
     RedisModule,
     OAuthModule,
+    AuditModule,
   ],
   providers: [
     {

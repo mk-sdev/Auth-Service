@@ -9,6 +9,7 @@ import {
   Patch,
   Put,
   UseGuards,
+  UseInterceptors,
   UsePipes,
   ValidationPipe,
 } from '@nestjs/common';
@@ -24,8 +25,11 @@ import { TokenRepoService } from '../repository/tokenRepo.service';
 import { UserDocument } from '../repository/mongo/user.schema';
 import { UserCrudRepoService } from '../repository/userCrudRepo.service';
 import { Role } from '../utils/interfaces';
+import { AuditInterceptor } from '../utils/audit/audit.interceptor';
+import { AuditAction } from '../decorators/audit-action.decorator';
 
 @UseGuards(JwtGuard, RolesGuard)
+@UseInterceptors(AuditInterceptor)
 @Controller('protected')
 @UsePipes(
   new ValidationPipe({
@@ -79,6 +83,7 @@ export class ProtectedController {
 
   @Roles(Role.ADMIN)
   @Put('user/:id')
+  @AuditAction('MODERATE', 'admin')
   async moderateUser(
     @Param('id') id: string,
     @Body() userDto: Omit<SafeUserDto, '_id'>,
@@ -88,6 +93,7 @@ export class ProtectedController {
 
   @Roles(Role.ADMIN)
   @Patch('user/:id/password')
+  @AuditAction('CHANGE_PASSWORD', 'admin')
   async changePassword(
     @Param('id') id: string,
     @Body() body: Pick<LoginDto, 'password'>,

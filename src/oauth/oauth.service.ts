@@ -3,6 +3,7 @@ import { UserDocument } from '../repository/mongo/user.schema';
 import { UserCrudRepoService } from '../repository/userCrudRepo.service';
 import { CoreService } from '../core/core.service';
 import { Provider } from '../utils/interfaces';
+import { Request } from 'express';
 
 @Injectable()
 export class OAuthService {
@@ -11,7 +12,7 @@ export class OAuthService {
     private readonly userCrudRepoService: UserCrudRepoService,
   ) {}
 
-  async fn(reqUser: { email: string; emailVerified: boolean }) {
+  async fn(reqUser: { email: string; emailVerified: boolean }, req: Request) {
     const { email, emailVerified } = reqUser;
 
     let user: UserDocument | null =
@@ -24,7 +25,7 @@ export class OAuthService {
       );
     }
 
-    const tokens = await this.coreService.login(user.email);
+    const tokens = await this.coreService.login(user.email, req);
 
     return tokens;
   }
