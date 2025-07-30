@@ -2,6 +2,7 @@ import { ExecutionContext, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Test } from '@nestjs/testing';
 import { JwtGuard } from './jwt.guard';
+import { AuditLoggerService } from '../utils/audit/audit.service';
 
 const createMockContext = (
   headers: Record<string, string> = {},
@@ -20,12 +21,20 @@ const createMockContext = (
 describe('JwtGuard - missing token', () => {
   let guard: JwtGuard;
 
+  const mockAuditLogger = {
+    unauthorized: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module = await Test.createTestingModule({
       providers: [
         {
           provide: 'JWT_ACCESS_SERVICE',
           useFactory: () => new JwtService({ secret: 'testingsecret' }),
+        },
+        {
+          provide: AuditLoggerService,
+          useValue: mockAuditLogger,
         },
         JwtGuard,
       ],

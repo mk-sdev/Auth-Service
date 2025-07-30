@@ -12,9 +12,9 @@ import { TokenRepoService } from '../repository/tokenRepo.service';
 import { UserCrudRepoService } from '../repository/userCrudRepo.service';
 import { account_deletion_lifespan } from '../utils/constants';
 import { JwtPayload } from '../utils/interfaces';
-import { AuditLoggerService } from 'src/utils/audit/audit.service';
+import { AuditLoggerService } from '../utils/audit/audit.service';
 import { Request } from 'express';
-import { createAuditDetails } from 'src/utils/audit/audit-utils';
+import { createAuditDetails } from '../utils/audit/audit-utils';
 type NewPayload = Omit<JwtPayload, 'iat' | 'exp'>;
 
 @Injectable()

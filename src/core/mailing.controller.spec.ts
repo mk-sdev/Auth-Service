@@ -7,6 +7,8 @@ import { MailingController } from './mailing.controller';
 import { MailingService } from './mailing.service';
 import { plainToInstance } from 'class-transformer';
 import { validateSync } from 'class-validator';
+import { AuditLoggerService } from '../utils/audit/audit.service';
+// import { createAuditDetails } from '../utils/audit/audit-utils';
 
 describe('MailController (integration)', () => {
   let controller: MailingController;
@@ -18,6 +20,14 @@ describe('MailController (integration)', () => {
         {
           provide: MailingService,
           useValue: {},
+        },
+        {
+          provide: AuditLoggerService,
+          useValue: {
+            log: jest.fn(),
+            warn: jest.fn(),
+            error: jest.fn(),
+          },
         },
       ],
     })

@@ -7,8 +7,8 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { JwtPayload, UserRequest } from '../utils/interfaces';
-import { AuditLoggerService } from 'src/utils/audit/audit.service';
-import { createAuditDetails } from 'src/utils/audit/audit-utils';
+import { AuditLoggerService } from '../utils/audit/audit.service';
+import { createAuditDetails } from '../utils/audit/audit-utils';
 
 @Injectable()
 export class JwtGuard implements CanActivate {

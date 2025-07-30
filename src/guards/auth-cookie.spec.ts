@@ -3,14 +3,20 @@ import { JwtService } from '@nestjs/jwt';
 import { Test } from '@nestjs/testing';
 import { JwtGuard } from './jwt.guard';
 import { JwtPayload, Role } from '../utils/interfaces';
+import { AuditLoggerService } from '../utils/audit/audit.service';
 
 const createMockContext = (
   cookies?: Record<string, string>,
+  headers: Record<string, string> = {},
+  ip = '127.0.0.1',
 ): ExecutionContext =>
   ({
     switchToHttp: () => ({
       getRequest: () => ({
         cookies: cookies ?? {},
+        headers: headers ?? {},
+        ip,
+        user: { sub: 'test-user-id' },
       }),
     }),
   }) as unknown as ExecutionContext;
@@ -18,6 +24,10 @@ const createMockContext = (
 describe('JwtGuard', () => {
   let jwtService: JwtService;
   let guard: JwtGuard;
+
+  const mockAuditLogger = {
+    unauthorized: jest.fn(),
+  };
 
   beforeEach(async () => {
     const module = await Test.createTestingModule({
@@ -29,6 +39,10 @@ describe('JwtGuard', () => {
               secret: 'testingsecret',
             });
           },
+        },
+        {
+          provide: AuditLoggerService,
+          useValue: mockAuditLogger,
         },
         JwtGuard,
       ],
@@ -72,15 +86,11 @@ describe('JwtGuard', () => {
     const alteredToken =
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2ODZkMDIxZGY5NTEwNDI4ZDQyYmNkOTQiLCJpYXQiOjE3NTIwNDk4MTMsImV4cCI6MzMyNzgwOsTIyMTN9.YJy0_zD-wIYXwNEfwDSVOjaCTwm7EhXC0B1dZ-FsWUI';
 
-    const context = {
-      switchToHttp: () => ({
-        getRequest: () => ({
-          cookies: {
-            access_token: alteredToken,
-          },
-        }),
-      }),
-    } as ExecutionContext;
+    const context = createMockContext(
+      { access_token: alteredToken },
+      {}, // headers
+      '127.0.0.1', // ip
+    );
 
     await expect(guard.canActivate(context)).rejects.toThrow(
       UnauthorizedException,

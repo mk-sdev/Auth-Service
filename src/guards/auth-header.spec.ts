@@ -3,6 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import { Test } from '@nestjs/testing';
 import { JwtGuard } from './jwt.guard';
 import { JwtPayload, Role } from '../utils/interfaces';
+import { AuditLoggerService } from '../utils/audit/audit.service';
 
 // helper type to mock the request from the header
 interface MockRequest {
@@ -28,6 +29,10 @@ describe('JwtGuard', () => {
   let jwtService: JwtService;
   let guard: JwtGuard;
 
+  const mockAuditLogger = {
+    unauthorized: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module = await Test.createTestingModule({
       providers: [
@@ -38,6 +43,10 @@ describe('JwtGuard', () => {
               secret: 'testingsecret',
             });
           },
+        },
+        {
+          provide: AuditLoggerService,
+          useValue: mockAuditLogger,
         },
         JwtGuard,
       ],

@@ -1,12 +1,23 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { CoreService } from './core.service';
-import { RepositoryService } from '../repository/repository.service';
+import { PasswordRepoService } from '../repository/passwordRepo.service';
+import { TokenRepoService } from '../repository/tokenRepo.service';
+import { UserCrudRepoService } from '../repository/userCrudRepo.service';
 import { MailingService } from '../core/mailing.service';
-import { JwtPayload } from '../utils/interfaces';
+import { JwtPayload, Role } from '../utils/interfaces';
 import { HashService } from '../utils/hash/hash.service';
+import { Request } from 'express';
+import { AuditModule } from '../utils/audit/audit.module';
 
 describe('CoreService', () => {
   let appService: CoreService;
+
+  const mockRequest = {
+    headers: { 'x-forwarded-for': '127.0.0.1' },
+    ip: '127.0.0.1',
+    method: 'GET',
+    originalUrl: '/example',
+  } as unknown as Request;
 
   const mockUserRepo = {
     findOne: jest.fn(),
@@ -31,12 +42,27 @@ describe('CoreService', () => {
     hash: jest.fn(),
   };
 
+  const mockRedisClient = {
+    incr: jest.fn(),
+    expire: jest.fn(),
+    del: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
+      imports: [AuditModule],
       providers: [
         CoreService,
         {
-          provide: RepositoryService,
+          provide: PasswordRepoService,
+          useValue: mockUserRepo,
+        },
+        {
+          provide: TokenRepoService,
+          useValue: mockUserRepo,
+        },
+        {
+          provide: UserCrudRepoService,
           useValue: mockUserRepo,
         },
         {
@@ -50,6 +76,10 @@ describe('CoreService', () => {
         {
           provide: MailingService,
           useValue: mockMailService,
+        },
+        {
+          provide: 'REDIS_CLIENT',
+          useValue: mockRedisClient,
         },
         {
           provide: HashService,
@@ -71,6 +101,7 @@ describe('CoreService', () => {
         sub: 'userId',
         iat: 1234567890,
         exp: 1234567890,
+        roles: [Role.USER],
       };
       const plainToken = 'some-refresh-token';
       const hashedToken = 'hashed-version-of-token';
@@ -132,13 +163,18 @@ describe('CoreService', () => {
       mockUserRepo.findOne.mockResolvedValue(null);
 
       await expect(
-        appService.changePassword('userId', 'abc', 'def'),
+        appService.changePassword('userId', 'abc', 'def', mockRequest),
       ).rejects.toThrow('The user of the given email doesn`t exist');
     });
 
     it('should throw if new password is same as current', async () => {
       await expect(
-        appService.changePassword('userId', 'samepassword', 'samepassword'),
+        appService.changePassword(
+          'userId',
+          'samepassword',
+          'samepassword',
+          mockRequest,
+        ),
       ).rejects.toThrow('New password cannot be the same as the old one');
     });
 
@@ -153,7 +189,12 @@ describe('CoreService', () => {
       jest.spyOn(hashService, 'verify').mockResolvedValue(false);
 
       await expect(
-        appService.changePassword('userId', 'wrongpassword', 'newpassword'),
+        appService.changePassword(
+          'userId',
+          'wrongpassword',
+          'newpassword',
+          mockRequest,
+        ),
       ).rejects.toThrow('Current password is incorrect');
     });
 
@@ -172,7 +213,12 @@ describe('CoreService', () => {
         .fn()
         .mockResolvedValue(undefined);
 
-      await appService.changePassword('userId', 'oldPassword', 'newPassword');
+      await appService.changePassword(
+        'userId',
+        'oldPassword',
+        'newPassword',
+        mockRequest,
+      );
 
       expect(mockUserRepo.updatePasswordAndClearTokens).toHaveBeenCalledWith(
         userMock.email,
@@ -186,7 +232,7 @@ describe('CoreService', () => {
       mockUserRepo.findOne.mockResolvedValue(null);
 
       await expect(
-        appService.markForDeletion('userId', 'password'),
+        appService.markForDeletion('userId', 'password', mockRequest),
       ).rejects.toThrow('The user of the given email doesn`t exist');
     });
 
@@ -199,7 +245,7 @@ describe('CoreService', () => {
       jest.spyOn(hashService, 'verify').mockResolvedValue(false);
 
       await expect(
-        appService.markForDeletion('userId', 'wrongpassword'),
+        appService.markForDeletion('userId', 'wrongpassword', mockRequest),
       ).rejects.toThrow('Current password is incorrect');
     });
 
@@ -216,7 +262,11 @@ describe('CoreService', () => {
 
       const before = Date.now();
 
-      await appService.markForDeletion('userId', 'correctPassword');
+      await appService.markForDeletion(
+        'userId',
+        'correctPassword',
+        mockRequest,
+      );
 
       expect(mockUserRepo.markUserForDeletion).toHaveBeenCalled();
       const callArgs = mockUserRepo.markUserForDeletion.mock.calls[0];

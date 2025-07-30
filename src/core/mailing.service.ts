@@ -19,9 +19,9 @@ import { HashService } from '../utils/hash/hash.service';
 import { PasswordRepoService } from '../repository/passwordRepo.service';
 import { VerificationRepoService } from '../repository/verificationRepo.service';
 import { UserCrudRepoService } from '../repository/userCrudRepo.service';
-import { createAuditDetails } from 'src/utils/audit/audit-utils';
+import { createAuditDetails } from '../utils/audit/audit-utils';
 import { Request } from 'express';
-import { AuditLoggerService } from 'src/utils/audit/audit.service';
+import { AuditLoggerService } from '../utils/audit/audit.service';
 
 @Injectable()
 export class MailingService {
@@ -58,18 +58,18 @@ export class MailingService {
         <p>If that's not you, ignore this message.</p>
       `,
     );
-    // await this.mailerService.sendMail({
-    //   to: toEmail,
-    //   subject,
-    //   template: undefined,
-    //   context,
-    //   html: `
-    //       <h3>Welcome!</h3>
-    //       <p>Click the link below:</p>
-    //       <a href="${confirmationLink}">${confirmationLink}</a>
-    //       <p>If that's not you, ignore this message.</p>
-    //     `,
-    // });
+    await this.mailerService.sendMail({
+      to: toEmail,
+      subject,
+      template: undefined,
+      context,
+      html: `
+          <h3>Welcome!</h3>
+          <p>Click the link below:</p>
+          <a href="${confirmationLink}">${confirmationLink}</a>
+          <p>If that's not you, ignore this message.</p>
+        `,
+    });
   }
 
   async register(email: string, password: string): Promise<void> {
