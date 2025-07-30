@@ -30,9 +30,7 @@ export class CoreService {
     private readonly hashService: HashService,
     @Inject('REDIS_CLIENT') private readonly redis: Redis,
     private readonly auditLogger: AuditLoggerService,
-  ) {
-    console.log('[CoreService] constructed');
-  }
+  ) {}
 
   async login(
     email: string,

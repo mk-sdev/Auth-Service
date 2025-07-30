@@ -29,8 +29,8 @@ export class AuditInterceptor implements NestInterceptor {
     const ctx = context.switchToHttp();
     const req = ctx.getRequest<UserRequest>();
     const userId = req.user?.sub || 'anonymous';
-    const ip =
-      req.headers['x-forwarded-for']?.toString() || req.ip || 'unknown';
+    // const ip =
+    //req.headers['x-forwarded-for']?.toString() || req.ip || 'unknown';
 
     const { action, type } = auditMeta;
     const details: AuditDetails = createAuditDetails(req);
