@@ -18,7 +18,6 @@ import {
 import { Roles } from '../decorators/roles.decorator';
 import { JwtGuard } from '../guards/jwt.guard';
 import { RolesGuard } from '../guards/roles.guard';
-// import { RepositoryService } from '../repository/repository.service';
 import { LoginDto } from '../dtos/login.dto';
 import { SafeUserDto } from '../dtos/safeUser.dto';
 import { HashService } from '../utils/hash/hash.service';
@@ -31,8 +30,8 @@ import { AuditInterceptor } from '../utils/audit/audit.interceptor';
 import { AuditAction } from '../decorators/audit-action.decorator';
 import { CoreService } from 'src/core/core.service';
 import { Request, Response } from 'express';
+import { accessTokenOptions, refreshTokenOptions } from 'src/utils/constants';
 
-@UseGuards(JwtGuard, RolesGuard)
 @UseInterceptors(AuditInterceptor)
 @Controller('protected')
 @UsePipes(
@@ -64,14 +63,14 @@ export class ProtectedController {
       loginDto.password,
     );
 
-    response.setHeader('Authorization', `Bearer ${access_token}`);
-    // response.setHeader('X-Refresh-Token', refresh_token);
-
-    return { message: 'Login successful', refresh_token };
+    response.cookie('access_token', access_token, accessTokenOptions);
+    response.cookie('refresh_token', refresh_token, refreshTokenOptions);
+    return { message: 'Login successful' };
   }
 
   @Roles(Role.ADMIN)
   @Get('user/id/:id')
+  @UseGuards(JwtGuard, RolesGuard)
   async getUserById(@Param('id') id: string): Promise<SafeUserDto | null> {
     const user: UserDocument | null =
       await this.userCrudRepoService.findOne(id);
@@ -89,6 +88,7 @@ export class ProtectedController {
 
   @Roles(Role.ADMIN)
   @Get('user/email/:email')
+  @UseGuards(JwtGuard, RolesGuard)
   async getUserByMail(
     @Param('email') email: string,
   ): Promise<SafeUserDto | null> {
@@ -108,6 +108,7 @@ export class ProtectedController {
 
   @Roles(Role.ADMIN)
   @Put('user/:id')
+  @UseGuards(JwtGuard, RolesGuard)
   @AuditAction('MODERATE', 'admin')
   async moderateUser(
     @Param('id') id: string,
@@ -119,6 +120,7 @@ export class ProtectedController {
   @Roles(Role.ADMIN)
   @Patch('user/:id/password')
   @AuditAction('CHANGE_PASSWORD', 'admin')
+  @UseGuards(JwtGuard, RolesGuard)
   async changePassword(
     @Param('id') id: string,
     @Body() body: Pick<LoginDto, 'password'>,
@@ -130,12 +132,14 @@ export class ProtectedController {
   @Roles(Role.ADMIN)
   @Patch('user/:id/logout')
   @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtGuard, RolesGuard)
   async logout(@Param('id') id: string): Promise<void> {
     await this.tokenRepoService.clearTokens(id);
   }
 
   @Roles(Role.ADMIN)
   @Get('users')
+  @UseGuards(JwtGuard, RolesGuard)
   async getAllUsers() {
     const users = await this.userCrudRepoService.getAllUsers();
     return users;
