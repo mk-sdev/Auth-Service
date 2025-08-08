@@ -24,6 +24,8 @@ import { JwtGuard } from '../guards/jwt.guard';
 import { AuditInterceptor } from '../utils/audit/audit.interceptor';
 import { HashInterceptor } from '../utils/hash/hash.interceptor';
 import { CoreService } from './core.service';
+import { accessTokenOptions, refreshTokenOptions } from 'src/utils/constants';
+import { Platform } from 'src/decorators/platform.decorator';
 
 @Controller()
 @UseInterceptors(AuditInterceptor)
@@ -39,7 +41,6 @@ export class CoreController {
   @Get('hello')
   @AuditAction('HELLO')
   getHello(): string {
-    // this.logger.log('-', 'hello');
     return 'Hello World!';
   }
 
@@ -51,6 +52,7 @@ export class CoreController {
     @Body() loginDto: LoginDto,
     @Res({ passthrough: true }) response: Response,
     @Req() req: Request,
+    @Platform() platform: 'web' | 'mobile',
   ) {
     const { access_token, refresh_token } = await this.coreService.login(
       loginDto.email,
@@ -58,6 +60,14 @@ export class CoreController {
       loginDto.password,
     );
 
+    // cookies
+    if (platform === 'web') {
+      response.cookie('access_token', access_token, accessTokenOptions);
+      response.cookie('refresh_token', refresh_token, refreshTokenOptions);
+      return { message: 'Login successful' };
+    }
+
+    // headers
     response.setHeader('Authorization', `Bearer ${access_token}`);
     // response.setHeader('X-Refresh-Token', refresh_token);
 
@@ -68,9 +78,38 @@ export class CoreController {
   @UseInterceptors(HashInterceptor)
   @HttpCode(HttpStatus.OK)
   @UseGuards(JwtGuard)
-  async logout(@Body() body: { refresh_token: string }) {
-    const { refresh_token } = body;
-    await this.coreService.logout(refresh_token);
+  async logout(
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+    @Platform() platform: 'web' | 'mobile',
+    @Body() body?: { refresh_token: string },
+  ) {
+    let refreshToken: string;
+
+    if (platform === 'web') {
+      refreshToken = req.cookies['refresh_token'];
+    } else {
+      refreshToken = body!.refresh_token;
+    }
+
+    // czyść ciasteczka tylko dla weba
+    if (platform === 'web') {
+      res.clearCookie('access_token', {
+        httpOnly: true,
+        secure: false,
+        sameSite: 'lax',
+        path: '/',
+      });
+      res.clearCookie('refresh_token', {
+        httpOnly: true,
+        secure: false,
+        sameSite: 'lax',
+        path: '/',
+      });
+    }
+
+    await this.coreService.logout(refreshToken);
+
     return { message: 'Logout successful' };
   }
 
@@ -95,6 +134,13 @@ export class CoreController {
       access_token: refreshed.access_token,
       refresh_token: refreshed.refresh_token,
     };
+  }
+
+  @UseGuards(JwtGuard)
+  @Get('me')
+  getMe(@Req() req: Request) {
+    // `req.user` został ustawiony w JwtGuard po zweryfikowaniu tokena
+    return req.user;
   }
 
   @Patch('change-password')

@@ -6,7 +6,11 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   // const app = await NestFactory.create<NestExpressApplication>(AppModule);
   app.enableCors({
-    origin: ['http://localhost:8081', 'http://192.168.1.30:8081'],
+    origin: [
+      'http://localhost:8081',
+      'http://192.168.1.30:8081',
+      'http://localhost:4200',
+    ],
     credentials: true,
     exposedHeaders: ['Authorization'], // so that I could send headers to a browser
   });
