@@ -19,7 +19,9 @@ import { HashModule } from './utils/hash/hash.module';
     ConfigModule.forRoot({
       isGlobal: true, // lets use process.env in the whole app
     }),
-    MongooseModule.forRoot('mongodb://localhost:27017/imagehub'),
+    MongooseModule.forRoot(
+      process.env.MONGO_URI || 'mongodb://localhost:27017/imagehub',
+    ),
     ThrottlerModule.forRoot({
       throttlers: [
         {

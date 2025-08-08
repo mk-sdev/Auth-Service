@@ -1,12 +1,14 @@
 version: '3'
 
 services:
-  app:
-    build: .
-    volumes:
-      - .:/app       
-      - /app/node_modules  
-    command: npm run start:dev
+  # app:
+  #   build: .
+  #   volumes:
+  #     - .:/app       
+  #     - /app/node_modules  
+  #   command: npm run start:dev
+  #   ports:
+  #     - '3000:3000'
 
   loki:
     image: grafana/loki:latest

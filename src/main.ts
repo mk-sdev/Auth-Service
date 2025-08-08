@@ -11,7 +11,7 @@ async function bootstrap() {
     exposedHeaders: ['Authorization'], // so that I could send headers to a browser
   });
   app.use(cookieParser());
-  await app.listen(process.env.PORT ?? 3000);
+  await app.listen(process.env.PORT ?? 3000, '0.0.0.0');
 }
 bootstrap().catch((err) => {
   console.error('Application failed to start', err);
