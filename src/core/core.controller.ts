@@ -87,7 +87,7 @@ export class CoreController {
     let refreshToken: string;
 
     if (platform === 'web') {
-      refreshToken = req.cookies['refresh_token'];
+      refreshToken = req.cookies['refresh_token'] as string;
     } else {
       refreshToken = body!.refresh_token;
     }
@@ -122,12 +122,28 @@ export class CoreController {
 
   @Patch('refresh')
   @HttpCode(HttpStatus.OK)
-  async refresh(@Body() body: { refresh_token: string }) {
-    const { refresh_token } = body;
-    const refreshed = await this.coreService.refreshTokens(
-      // access_token,
-      refresh_token,
-    );
+  async refresh(
+    @Platform() platform: 'web' | 'mobile',
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+    @Body() body?: { refresh_token?: string },
+  ) {
+    let refreshToken: string | undefined;
+
+    if (platform === 'web')
+      refreshToken = req.cookies['refresh_token'] as string | undefined;
+    else refreshToken = body?.refresh_token;
+
+    if (!refreshToken)
+      throw new UnauthorizedException('No refresh token provided');
+
+    const refreshed = await this.coreService.refreshTokens(refreshToken);
+
+    if (platform === 'web') {
+      res.cookie('access_token', refreshed.access_token, accessTokenOptions);
+      res.cookie('refresh_token', refreshed.refresh_token, refreshTokenOptions);
+      return { message: 'Refresh successful' };
+    }
 
     return {
       message: 'Refresh successful',
@@ -136,11 +152,10 @@ export class CoreController {
     };
   }
 
+  @Get('is-logged') //* cookies only
   @UseGuards(JwtGuard)
-  @Get('me')
-  getMe(@Req() req: Request) {
-    // `req.user` został ustawiony w JwtGuard po zweryfikowaniu tokena
-    return req.user;
+  returnIsLogged(): true {
+    return true;
   }
 
   @Patch('change-password')
