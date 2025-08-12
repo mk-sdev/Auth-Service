@@ -152,7 +152,11 @@ export class CoreController {
     };
   }
 
-  @Get('is-logged') //* cookies only
+  /**
+   *
+   * @description On mobile, if the app wants to know i a user is logged in, it simply checks if the secure storage contains a valid access token. But browsers don't have an access to cookies if the are httpOnly. Therefore browser needs to ask the backend to check if the user is logged in.
+   */
+  @Get('is-logged') // * cookies only
   @UseGuards(JwtGuard)
   returnIsLogged(): true {
     return true;
