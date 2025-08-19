@@ -123,8 +123,9 @@ export class ProtectedController {
   @UseGuards(JwtGuard, RolesGuard)
   async changePassword(
     @Param('id') id: string,
-    @Body() body: Pick<LoginDto, 'password'>,
+    @Body() body: Pick<LoginDto, 'password'>, //? Why not registerDto?
   ): Promise<void> {
+    console.log('🚀 ~ ProtectedController ~ changePassword ~ body:', body);
     const hashedPassword = await this.hashService.hash(body.password);
     await this.passwordRepoService.changePassword(id, hashedPassword);
   }

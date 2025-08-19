@@ -3,20 +3,17 @@
 An authentication & authorization microservice designed to integrate easily into any project, saving development time and offering full flexibility for customization.
 
 ## ✨ Features  
-✅ JWT based
-- Efficient and stateless, ideal for microservice architecture — reduces database load and simplifies scaling.
+✅ **JWT based** - Efficient and stateless, ideal for microservice architecture — reduces database load and simplifies scaling.
 
-✅ High security standards
-- Passwords hashed with Argon2, Redis-powered rate limiting, and rigorous testing ensure robust protection against brute-force and other common attacks.
+✅ **High security standards** - Passwords hashed with Argon2, Redis-powered rate limiting, and rigorous testing ensure robust protection against brute-force and other common attacks.
 
-✅ OAuth 2.0 integration
-- Let the users sign up effortlessly thanks to Google provider.
+✅ **Client-agnostic** - Works seamlessly with both web and mobile clients by handling JWTs from cookies as well as HTTP headers.
 
-✅ Built-in admin panel
-- Manage users, reset their passwords, assign roles, and force logout from all devices when needed.
+✅ **OAuth 2.0 integration** - Let the users sign up effortlessly thanks to Google provider.
 
-✅ Audit log
-- Track every movement to detect suspicious behavior.
+✅ **Built-in admin routes** - Manage users, reset their passwords, assign roles, and force logout from all devices when needed.
+
+✅ **Audit log** - Track every movement to detect suspicious behavior.
 
 
 ## 🛠 Tech Stack  
