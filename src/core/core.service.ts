@@ -5,18 +5,17 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { Request } from 'express';
 import Redis from 'ioredis';
-import { HashService } from '../utils/hash/hash.service';
 import { PasswordRepoService } from '../repository/passwordRepo.service';
 import { TokenRepoService } from '../repository/tokenRepo.service';
 import { UserCrudRepoService } from '../repository/userCrudRepo.service';
-import { account_deletion_lifespan } from '../utils/constants';
-import { JwtPayload, Role } from '../utils/interfaces';
-import { AuditLoggerService } from '../utils/audit/audit.service';
-import { Request } from 'express';
 import { createAuditDetails } from '../utils/audit/audit-utils';
-import { UserRole } from 'src/repository/pg/user-role.entity';
-import { extractRoles } from 'src/utils/extractRoles';
+import { AuditLoggerService } from '../utils/audit/audit.service';
+import { account_deletion_lifespan } from '../utils/constants';
+import { extractRoles } from '../utils/extractRoles';
+import { HashService } from '../utils/hash/hash.service';
+import { JwtPayload } from '../utils/interfaces';
 type NewPayload = Omit<JwtPayload, 'iat' | 'exp'>;
 
 @Injectable()
