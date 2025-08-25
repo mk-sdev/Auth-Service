@@ -9,6 +9,8 @@ An authentication & authorization microservice designed to integrate easily into
 
 ✅ **Client-agnostic** - Works seamlessly with both web and mobile clients by handling JWTs from cookies as well as HTTP headers.
 
+✅ **Database-agnostic** - Supports both relational (PostgreSQL) and non-relational (MongoDB) databases.
+
 ✅ **OAuth 2.0 integration** - Let the users sign up effortlessly thanks to Google provider.
 
 ✅ **Built-in admin routes** - Manage users, reset their passwords, assign roles, and force logout from all devices when needed.
@@ -20,7 +22,8 @@ An authentication & authorization microservice designed to integrate easily into
 - **Node.js**
 - **TypeScript**
 - **NestJS**  
-- **Mongo db + mongoose**
+- **MongoDB + mongoose**
+- **PostgreSQL + TypeORM**
 - **Redis**   
 - **Grafana + Loki + Promtail**
 - **Docker**  
