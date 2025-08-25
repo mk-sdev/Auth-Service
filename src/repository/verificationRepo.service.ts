@@ -13,12 +13,9 @@ export class VerificationRepoService implements IVerification {
     private readonly mongoService: MongoVerificationService,
     private readonly pgService: PgVerificationService,
   ) {
-    this.repoService = this.mongoService;
     if (process.env.DB_TYPE === 'mongo') {
       this.repoService = this.mongoService;
-    } else {
-      this.repoService = this.pgService;
-    }
+    } else this.repoService = this.pgService;
   }
 
   async setNewVerificationToken(

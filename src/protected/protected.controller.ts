@@ -31,6 +31,9 @@ import { AuditAction } from '../decorators/audit-action.decorator';
 import { CoreService } from 'src/core/core.service';
 import { Request, Response } from 'express';
 import { accessTokenOptions, refreshTokenOptions } from 'src/utils/constants';
+import { User } from 'src/repository/pg/user.entity';
+import { UserRole } from 'src/repository/pg/user-role.entity';
+import { extractRoles } from 'src/utils/extractRoles';
 
 @UseInterceptors(AuditInterceptor)
 @Controller('protected')
@@ -72,7 +75,7 @@ export class ProtectedController {
   @Get('user/id/:id')
   @UseGuards(JwtGuard, RolesGuard)
   async getUserById(@Param('id') id: string): Promise<SafeUserDto | null> {
-    const user: UserDocument | null =
+    const user: UserDocument | User | null =
       await this.userCrudRepoService.findOne(id);
 
     if (!user) throw new NotFoundException('User not found');
@@ -80,7 +83,7 @@ export class ProtectedController {
     return {
       _id: user._id as string,
       email: user.email,
-      roles: user.roles,
+      roles: extractRoles(user.roles),
       isVerified: user.isVerified,
       provider: user.provider,
     };
@@ -92,7 +95,7 @@ export class ProtectedController {
   async getUserByMail(
     @Param('email') email: string,
   ): Promise<SafeUserDto | null> {
-    const user: UserDocument | null =
+    const user: UserDocument | User | null =
       await this.userCrudRepoService.findOneByEmail(email);
 
     if (!user) throw new NotFoundException('User not found');
@@ -100,7 +103,7 @@ export class ProtectedController {
     return {
       _id: user._id as string,
       email: user.email,
-      roles: user.roles,
+      roles: extractRoles(user.roles),
       isVerified: user.isVerified,
       provider: user.provider,
     };
@@ -125,7 +128,6 @@ export class ProtectedController {
     @Param('id') id: string,
     @Body() body: Pick<LoginDto, 'password'>, //? Why not registerDto?
   ): Promise<void> {
-    console.log('🚀 ~ ProtectedController ~ changePassword ~ body:', body);
     const hashedPassword = await this.hashService.hash(body.password);
     await this.passwordRepoService.changePassword(id, hashedPassword);
   }

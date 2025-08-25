@@ -13,6 +13,10 @@ import { TokensModule } from './utils/tokens.module';
 import { OAuthModule } from './oauth/oauth.module';
 import { AuditModule } from './utils/audit/audit.module';
 import { HashModule } from './utils/hash/hash.module';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { User } from './repository/pg/user.entity';
+import { UserRole } from './repository/pg/user-role.entity';
+import { RefreshToken } from './repository/pg/refresh-token.entity';
 
 @Module({
   imports: [
@@ -22,6 +26,16 @@ import { HashModule } from './utils/hash/hash.module';
     MongooseModule.forRoot(
       process.env.MONGO_URI || 'mongodb://localhost:27017/imagehub',
     ),
+    TypeOrmModule.forRoot({
+      type: 'postgres',
+      host: process.env.DB_HOST,
+      port: +process.env.DB_PORT! || 3306,
+      username: process.env.DB_USER,
+      password: process.env.DB_PASSWORD,
+      database: process.env.DB_NAME,
+      entities: [User, UserRole, RefreshToken],
+      synchronize: true,
+    }),
     ThrottlerModule.forRoot({
       throttlers: [
         {

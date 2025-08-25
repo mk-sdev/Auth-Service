@@ -11,10 +11,12 @@ import { PasswordRepoService } from '../repository/passwordRepo.service';
 import { TokenRepoService } from '../repository/tokenRepo.service';
 import { UserCrudRepoService } from '../repository/userCrudRepo.service';
 import { account_deletion_lifespan } from '../utils/constants';
-import { JwtPayload } from '../utils/interfaces';
+import { JwtPayload, Role } from '../utils/interfaces';
 import { AuditLoggerService } from '../utils/audit/audit.service';
 import { Request } from 'express';
 import { createAuditDetails } from '../utils/audit/audit-utils';
+import { UserRole } from 'src/repository/pg/user-role.entity';
+import { extractRoles } from 'src/utils/extractRoles';
 type NewPayload = Omit<JwtPayload, 'iat' | 'exp'>;
 
 @Injectable()
@@ -106,7 +108,7 @@ export class CoreService {
     //* if the user is found and the password matches, generate a JWT token and send it back
     const payload: NewPayload = {
       sub: user._id as string,
-      roles: user.roles,
+      roles: extractRoles(user.roles),
     };
     const access_token = await this.accessTokenService.signAsync(payload);
     const refresh_token = await this.refreshTokenService.signAsync(payload);
@@ -148,14 +150,14 @@ export class CoreService {
       for (const hashedToken of user.refreshTokens) {
         //compare via this.hashService.verify
         const isMatch = await this.hashService.verify(
-          hashedToken,
+          typeof hashedToken === 'object' ? hashedToken.token : hashedToken,
           refresh_token,
         );
         if (isMatch) {
           //removed the token from the db
           await this.tokenRepoService.removeRefreshToken(
             payload.sub, //
-            hashedToken,
+            typeof hashedToken === 'object' ? hashedToken.token : hashedToken,
           );
         }
       }
@@ -182,7 +184,7 @@ export class CoreService {
 
       const newPayload: NewPayload = {
         sub: user._id as string,
-        roles: user.roles ?? ['USER'],
+        roles: extractRoles(user.roles ?? ['USER']),
       };
 
       const newAccessToken =
@@ -197,14 +199,14 @@ export class CoreService {
 
       for (const hashedToken of user.refreshTokens) {
         const isMatch = await this.hashService.verify(
-          hashedToken,
+          typeof hashedToken === 'object' ? hashedToken.token : hashedToken,
           refresh_token,
         );
         if (isMatch) {
           validTokenFound = true;
           await this.tokenRepoService.replaceRefreshToken(
             user._id as string,
-            hashedToken,
+            typeof hashedToken === 'object' ? hashedToken.token : hashedToken,
             newHashedRefreshToken,
           );
           break;

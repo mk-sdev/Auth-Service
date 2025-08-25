@@ -9,18 +9,15 @@ import { User } from './pg/user.entity';
 
 @Injectable()
 export class UserCrudRepoService implements IUserCrud {
-  private repoService: IUserCrud;
+  private readonly repoService: IUserCrud;
 
   constructor(
     private readonly mongoService: MongoUserCrudService,
     private readonly pgService: PgUserCrudService,
   ) {
-    this.repoService = this.mongoService;
     if (process.env.DB_TYPE === 'mongo') {
       this.repoService = this.mongoService;
-    } else {
-      this.repoService = this.pgService;
-    }
+    } else this.repoService = this.pgService;
   }
 
   async findOne(id: string): Promise<UserDocument | User | null> {

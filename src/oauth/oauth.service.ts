@@ -4,6 +4,7 @@ import { UserCrudRepoService } from '../repository/userCrudRepo.service';
 import { CoreService } from '../core/core.service';
 import { Provider } from '../utils/interfaces';
 import { Request } from 'express';
+import { User } from 'src/repository/pg/user.entity';
 
 @Injectable()
 export class OAuthService {
@@ -15,7 +16,7 @@ export class OAuthService {
   async fn(reqUser: { email: string; emailVerified: boolean }, req: Request) {
     const { email, emailVerified } = reqUser;
 
-    let user: UserDocument | null =
+    let user: UserDocument | User | null =
       await this.userCrudRepoService.findOneByEmail(email);
 
     if (!user) {

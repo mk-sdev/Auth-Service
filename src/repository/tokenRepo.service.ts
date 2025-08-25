@@ -11,12 +11,9 @@ export class TokenRepoService implements IToken {
     private readonly mongoService: MongoTokenService,
     private readonly pgService: PgTokenService,
   ) {
-    this.repoService = this.mongoService;
     if (process.env.DB_TYPE === 'mongo') {
       this.repoService = this.mongoService;
-    } else {
-      this.repoService = this.pgService;
-    }
+    } else this.repoService = this.pgService;
   }
 
   async addRefreshToken(id: string, token: string): Promise<void> {

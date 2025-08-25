@@ -11,12 +11,9 @@ export class PasswordRepoService implements IPassword {
     private readonly mongoService: MongoPasswordService,
     private readonly pgService: PgPasswordService,
   ) {
-    this.repoService = this.mongoService;
     if (process.env.DB_TYPE === 'mongo') {
       this.repoService = this.mongoService;
-    } else {
-      this.repoService = this.pgService;
-    }
+    } else this.repoService = this.pgService;
   }
 
   async changePassword(_id: string, password: string) {
