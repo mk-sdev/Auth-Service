@@ -310,6 +310,7 @@ export class CoreService {
         path,
         method,
       });
+      //TODO: should the app say if the user doesn't exist?
       throw new ConflictException('The user of the given email doesn`t exist');
     }
 
