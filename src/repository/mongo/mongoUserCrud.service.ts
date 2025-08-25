@@ -4,13 +4,14 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { UserDocument } from './user.schema';
 import { SafeUserDto } from 'src/dtos/safeUser.dto';
+import { Provider } from 'src/utils/interfaces';
 
 @Injectable()
 export class MongoUserCrudService implements IUserCrud {
   constructor(@InjectModel('User') private userModel: Model<UserDocument>) {}
 
-  async findOne(id: string): Promise<UserDocument | null> {
-    return this.userModel.findOne({ _id: id });
+  async findOne(_id: string): Promise<UserDocument | null> {
+    return this.userModel.findOne({ _id });
   }
 
   async findOneByEmail(email: string): Promise<UserDocument | null> {
@@ -42,7 +43,7 @@ export class MongoUserCrudService implements IUserCrud {
 
   async insertOne_OAuth(
     email: string,
-    provider: string,
+    provider: Provider,
   ): Promise<UserDocument> {
     return await this.userModel.create({
       email,

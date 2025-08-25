@@ -2,6 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { IVerification } from './interfaces/iVerification';
 import { MongoVerificationService } from './mongo/mongoVerification.service';
 import { UserDocument } from './mongo/user.schema';
+import { PgVerificationService } from './pg/pgVerification.service';
+import { User } from './pg/user.entity';
 
 @Injectable()
 export class VerificationRepoService implements IVerification {
@@ -9,14 +11,14 @@ export class VerificationRepoService implements IVerification {
 
   constructor(
     private readonly mongoService: MongoVerificationService,
-    // private readonly pgService: PgService,
+    private readonly pgService: PgVerificationService,
   ) {
     this.repoService = this.mongoService;
-    // if (process.env.DB_TYPE === 'mongo') {
-    //   this.repoService = this.mongoService;
-    // } else {
-    //   this.repoService = this.pgService;
-    // }
+    if (process.env.DB_TYPE === 'mongo') {
+      this.repoService = this.mongoService;
+    } else {
+      this.repoService = this.pgService;
+    }
   }
 
   async setNewVerificationToken(
@@ -49,17 +51,19 @@ export class VerificationRepoService implements IVerification {
 
   async findOneByVerificationToken(
     token: string,
-  ): Promise<UserDocument | null> {
+  ): Promise<UserDocument | User | null> {
     return this.repoService.findOneByVerificationToken(token);
   }
 
-  async findOneByEmailToken(token: string): Promise<UserDocument | null> {
+  async findOneByEmailToken(
+    token: string,
+  ): Promise<UserDocument | User | null> {
     return this.repoService.findOneByEmailToken(token);
   }
 
   async findOneByPasswordResetToken(
     token: string,
-  ): Promise<UserDocument | null> {
+  ): Promise<UserDocument | User | null> {
     return this.repoService.findOneByPasswordResetToken(token);
   }
 }

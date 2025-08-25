@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { IToken } from './interfaces/iToken';
 import { MongoTokenService } from './mongo/mongoToken.service';
+import { PgTokenService } from './pg/pgToken.service';
 
 @Injectable()
 export class TokenRepoService implements IToken {
@@ -8,14 +9,14 @@ export class TokenRepoService implements IToken {
 
   constructor(
     private readonly mongoService: MongoTokenService,
-    // private readonly pgService: PgService,
+    private readonly pgService: PgTokenService,
   ) {
     this.repoService = this.mongoService;
-    // if (process.env.DB_TYPE === 'mongo') {
-    //   this.repoService = this.mongoService;
-    // } else {
-    //   this.repoService = this.pgService;
-    // }
+    if (process.env.DB_TYPE === 'mongo') {
+      this.repoService = this.mongoService;
+    } else {
+      this.repoService = this.pgService;
+    }
   }
 
   async addRefreshToken(id: string, token: string): Promise<void> {

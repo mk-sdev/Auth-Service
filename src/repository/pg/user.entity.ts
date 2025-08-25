@@ -40,31 +40,31 @@ export class User {
 
   @Index({ unique: true, where: 'verificationToken IS NOT NULL' })
   @Column({ type: 'varchar', nullable: true })
-  verificationToken?: string;
+  verificationToken?: string | null;
 
   @Column({ type: 'bigint', nullable: true })
-  verificationTokenExpires?: number;
+  verificationTokenExpires?: number | null;
 
   @Column({ type: 'varchar', nullable: true })
-  pendingEmail?: string;
+  pendingEmail?: string | null;
 
   @Index({ unique: true, where: 'emailChangeToken IS NOT NULL' })
   @Column({ type: 'varchar', nullable: true })
-  emailChangeToken?: string;
+  emailChangeToken?: string | null;
 
   @Column({ type: 'bigint', nullable: true })
-  emailChangeTokenExpires?: number;
+  emailChangeTokenExpires?: number | null;
 
   @Index({ unique: true, where: 'passwordResetToken IS NOT NULL' })
   @Column({ type: 'varchar', nullable: true })
-  passwordResetToken?: string;
+  passwordResetToken?: string | null;
 
   @Column({ type: 'bigint', nullable: true })
-  passwordResetTokenExpires?: number;
+  passwordResetTokenExpires?: number | null;
 
   @Column({ type: 'boolean', default: false })
-  isDeletionPending?: boolean;
+  isDeletionPending?: boolean | null;
 
   @Column({ type: 'bigint', nullable: true })
-  deletionScheduledAt?: number;
+  deletionScheduledAt?: number | null;
 }

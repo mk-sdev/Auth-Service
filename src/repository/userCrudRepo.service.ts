@@ -4,6 +4,8 @@ import { MongoUserCrudService } from './mongo/mongoUserCrud.service';
 import { SafeUserDto } from '../dtos/safeUser.dto';
 import { UserDocument } from './mongo/user.schema';
 import { Provider } from '../utils/interfaces';
+import { PgUserCrudService } from './pg/pgUserCrud.service';
+import { User } from './pg/user.entity';
 
 @Injectable()
 export class UserCrudRepoService implements IUserCrud {
@@ -11,25 +13,25 @@ export class UserCrudRepoService implements IUserCrud {
 
   constructor(
     private readonly mongoService: MongoUserCrudService,
-    // private readonly pgService: PgService,
+    private readonly pgService: PgUserCrudService,
   ) {
     this.repoService = this.mongoService;
-    // if (process.env.DB_TYPE === 'mongo') {
-    //   this.repoService = this.mongoService;
-    // } else {
-    //   this.repoService = this.pgService;
-    // }
+    if (process.env.DB_TYPE === 'mongo') {
+      this.repoService = this.mongoService;
+    } else {
+      this.repoService = this.pgService;
+    }
   }
 
-  async findOne(id: string): Promise<UserDocument | null> {
+  async findOne(id: string): Promise<UserDocument | User | null> {
     return this.repoService.findOne(id);
   }
 
-  async findOneByEmail(email: string): Promise<UserDocument | null> {
+  async findOneByEmail(email: string): Promise<UserDocument | User | null> {
     return this.repoService.findOneByEmail(email);
   }
 
-  async getAllUsers() {
+  async getAllUsers(): Promise<UserDocument[] | Pick<User, 'email'>[] | null> {
     return await this.repoService.getAllUsers();
   }
 
@@ -43,7 +45,7 @@ export class UserCrudRepoService implements IUserCrud {
     password: string;
     verificationToken: string;
     verificationTokenExpires: number;
-  }): Promise<UserDocument> {
+  }): Promise<UserDocument | User> {
     return this.repoService.insertOne({
       email,
       password,
@@ -55,7 +57,7 @@ export class UserCrudRepoService implements IUserCrud {
   async insertOne_OAuth(
     email: string,
     provider: Provider,
-  ): Promise<UserDocument> {
+  ): Promise<UserDocument | User> {
     return await this.repoService.insertOne_OAuth(email, provider);
   }
 
