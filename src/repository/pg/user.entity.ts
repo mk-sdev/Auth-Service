@@ -35,36 +35,36 @@ export class User {
   })
   provider: Provider;
 
-  @Column({ default: false })
+  @Column({ name: 'isverified', type: 'boolean', default: false })
   isVerified: boolean;
 
-  @Index({ unique: true, where: 'verificationToken IS NOT NULL' })
-  @Column({ type: 'varchar', nullable: true })
+  @Index({ unique: true, where: '"verificationtoken" IS NOT NULL' })
+  @Column({ name: 'verificationtoken', type: 'varchar', nullable: true })
   verificationToken?: string | null;
 
-  @Column({ type: 'bigint', nullable: true })
+  @Column({ name: 'verificationtokenexpires', type: 'bigint', nullable: true })
   verificationTokenExpires?: number | null;
 
-  @Column({ type: 'varchar', nullable: true })
+  @Column({ name: 'pendingemail', type: 'varchar', nullable: true })
   pendingEmail?: string | null;
 
-  @Index({ unique: true, where: 'emailChangeToken IS NOT NULL' })
-  @Column({ type: 'varchar', nullable: true })
+  @Index({ unique: true, where: '"emailchangetoken" IS NOT NULL' })
+  @Column({ name: 'emailchangetoken', type: 'varchar', nullable: true })
   emailChangeToken?: string | null;
 
-  @Column({ type: 'bigint', nullable: true })
+  @Column({ name: 'emailchangetokenexpires', type: 'bigint', nullable: true })
   emailChangeTokenExpires?: number | null;
 
-  @Index({ unique: true, where: 'passwordResetToken IS NOT NULL' })
-  @Column({ type: 'varchar', nullable: true })
+  @Index({ unique: true, where: '"passwordresettoken" IS NOT NULL' })
+  @Column({ name: 'passwordresettoken', type: 'varchar', nullable: true })
   passwordResetToken?: string | null;
 
-  @Column({ type: 'bigint', nullable: true })
+  @Column({ name: 'passwordresettokenexpires', type: 'bigint', nullable: true })
   passwordResetTokenExpires?: number | null;
 
-  @Column({ type: 'boolean', default: false })
+  @Column({ name: 'isdeletionpending', type: 'boolean', default: false })
   isDeletionPending?: boolean | null;
 
-  @Column({ type: 'bigint', nullable: true })
+  @Column({ name: 'deletionscheduledat', type: 'bigint', nullable: true })
   deletionScheduledAt?: number | null;
 }
