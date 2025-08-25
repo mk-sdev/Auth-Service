@@ -4,8 +4,8 @@ services:
   # app:
   #   build: .
   #   volumes:
-  #     - .:/app       
-  #     - /app/node_modules  
+  #     - .:/app
+  #     - /app/node_modules
   #   command: npm run start:dev
   #   ports:
   #     - '3000:3000'
@@ -32,18 +32,31 @@ services:
     volumes:
       - grafana-storage:/var/lib/grafana
     environment:
-    - GF_SECURITY_ADMIN_PASSWORD=admin
-    - GF_SECURITY_ALLOW_EMBEDDING=true
-    - GF_PUBLIC_DASHBOARDS_ENABLED=true
-    - GF_AUTH_ANONYMOUS_ENABLED=true
-    - GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_SECURITY_ALLOW_EMBEDDING=true
+      - GF_PUBLIC_DASHBOARDS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer
     depends_on:
       - loki
 
   redis:
     image: redis
-    ports: 
+    ports:
       - 6379:6379
+
+  postgres:
+    image: postgres:15
+    container_name: auth_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: auth_user
+      POSTGRES_PASSWORD: auth_password
+      POSTGRES_DB: auth_db
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
 
   # mongo:
   #   image: mongo:6.0
@@ -58,4 +71,5 @@ services:
 
 volumes:
   mongo-data:
+  postgres_data:
   grafana-storage:
