@@ -1,20 +1,32 @@
 import { Injectable } from '@nestjs/common';
+import { InjectMetric } from '@willsoto/nestjs-prometheus';
 import * as argon2 from 'argon2';
+import { Histogram } from 'prom-client';
 
 @Injectable()
 export class HashService {
-  async hash(data: string): Promise<string> {
-    const options =
-      process.env.NODE_ENV !== 'test'
-        ? {
-            type: argon2.argon2id,
-            timeCost: 4,
-            memoryCost: 2 ** 16,
-            parallelism: 2,
-          }
-        : undefined;
+  constructor(
+    @InjectMetric('hashing_duration_seconds')
+    private readonly hashingDurationHistogram: Histogram<string>,
+  ) {}
 
-    return argon2.hash(data, options);
+  async hash(data: string): Promise<string> {
+    const endTimer = this.hashingDurationHistogram.startTimer();
+    try {
+      const options =
+        process.env.NODE_ENV !== 'test'
+          ? {
+              type: argon2.argon2id,
+              timeCost: 4,
+              memoryCost: 2 ** 16,
+              parallelism: 2,
+            }
+          : undefined;
+
+      return argon2.hash(data, options);
+    } finally {
+      endTimer();
+    }
   }
 
   async verify(hash: string, plain: string): Promise<boolean> {
