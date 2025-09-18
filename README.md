@@ -17,6 +17,11 @@ An authentication & authorization microservice designed to integrate easily into
 
 ✅ **Audit log** - Track every movement to detect suspicious behavior.
 
+✅ **Prometheus monitoring** - Collect real-time metrics on app performance, security events, and system health to enable proactive monitoring and alerting.
+
+✅ **Automated maintenance with cronjobs** - Periodic cleanup tasks ensure data integrity and optimal performance without manual intervention.
+
+
 
 ## 🛠 Tech Stack  
 - **Node.js**
@@ -25,8 +30,9 @@ An authentication & authorization microservice designed to integrate easily into
 - **MongoDB + mongoose**
 - **PostgreSQL + TypeORM**
 - **Redis**   
-- **Grafana + Loki + Promtail**
+- **Grafana + Loki + Promtail + Prometheus**
 - **Docker**  
+- **Python**  
 
 ### .env file structure:
 
