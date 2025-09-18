@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { IVerification } from './interfaces/iVerification';
 import { MongoVerificationService } from './mongo/mongoVerification.service';
 import { UserDocument } from './mongo/user.schema';
-import { PgVerificationService } from './pg/pgVerification.service';
+// import { PgVerificationService } from './pg/pgVerification.service';
 import { User } from './pg/user.entity';
 
 @Injectable()
@@ -11,11 +11,12 @@ export class VerificationRepoService implements IVerification {
 
   constructor(
     private readonly mongoService: MongoVerificationService,
-    private readonly pgService: PgVerificationService,
+    // private readonly pgService: PgVerificationService,
   ) {
     if (process.env.DB_TYPE === 'mongo') {
       this.repoService = this.mongoService;
-    } else this.repoService = this.pgService;
+    }
+    // else this.repoService = this.pgService;
   }
 
   async setNewVerificationToken(

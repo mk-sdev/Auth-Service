@@ -9,6 +9,10 @@ services:
   #   command: npm run start:dev
   #   ports:
   #     - '3000:3000'
+  #   depends_on:
+  #     - mongo
+  #     - redis
+  #     - postgres
 
   loki:
     image: grafana/loki:latest
@@ -45,18 +49,18 @@ services:
     ports:
       - 6379:6379
 
-  postgres:
-    image: postgres:15
-    container_name: auth_postgres
-    restart: always
-    environment:
-      POSTGRES_USER: auth_user
-      POSTGRES_PASSWORD: auth_password
-      POSTGRES_DB: auth_db
-    ports:
-      - '5432:5432'
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
+  # postgres:
+  #   image: postgres:15
+  #   # container_name: auth_postgres
+  #   restart: always
+  #   environment:
+  #     POSTGRES_USER: auth_user
+  #     POSTGRES_PASSWORD: auth_password
+  #     POSTGRES_DB: auth_db
+  #   ports:
+  #     - '5432:5432'
+  #   volumes:
+  #     - postgres_data:/var/lib/postgresql/data
 
   # mongo:
   #   image: mongo:6.0

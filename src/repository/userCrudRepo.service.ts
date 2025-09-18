@@ -4,7 +4,7 @@ import { MongoUserCrudService } from './mongo/mongoUserCrud.service';
 import { SafeUserDto } from '../dtos/safeUser.dto';
 import { UserDocument } from './mongo/user.schema';
 import { Provider } from '../utils/interfaces';
-import { PgUserCrudService } from './pg/pgUserCrud.service';
+// import { PgUserCrudService } from './pg/pgUserCrud.service';
 import { User } from './pg/user.entity';
 
 @Injectable()
@@ -13,11 +13,12 @@ export class UserCrudRepoService implements IUserCrud {
 
   constructor(
     private readonly mongoService: MongoUserCrudService,
-    private readonly pgService: PgUserCrudService,
+    // private readonly pgService: PgUserCrudService,
   ) {
     if (process.env.DB_TYPE === 'mongo') {
       this.repoService = this.mongoService;
-    } else this.repoService = this.pgService;
+    }
+    // else this.repoService = this.pgService;
   }
 
   async findOne(id: string): Promise<UserDocument | User | null> {
