@@ -1,0 +1,17 @@
+image: node:current
+
+stages:
+  - test
+
+cache:
+  key: "${CI_COMMIT_REF_NAME}-${CI_CHECKSUM_PACKAGE_LOCK}"
+  paths:
+    - .npm/
+
+before_script:
+  - npm ci
+
+test:
+  stage: test
+  script:
+    - npm run test
