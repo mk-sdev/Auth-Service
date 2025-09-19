@@ -57,15 +57,15 @@ describe('JwtGuard', () => {
 
   it('should return true for valid token', async () => {
     const token =
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2ODg3MWY0NzI5YTgwMTM0MDkyMTM1NjUiLCJyb2xlcyI6WyJVU0VSIl0sImlhdCI6MTc1MzY4OTQ0NywiZXhwIjoxNzU3Mjg1ODQ3fQ.uZt4-ewlZnpxEJbXXGHKKnQQsSSt7s0B9bYUojrIDiU';
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2ODg3MWY0NzI5YTgwMTM0MDkyMTM1NjUiLCJyb2xlcyI6WyJVU0VSIl0sImlhdCI6MTc1ODI3MDQ3OSwiZXhwIjozMzI4NDMxMjg3OX0.U8BaMs_oUCVzZ9mTORDX3xbXl237V9JLn5ktYx5drvU';
 
     const context = createMockContext(token);
 
     const expectedPayload: JwtPayload = {
       sub: '68871f4729a8013409213565',
       roles: [Role.USER],
-      iat: 1753689447,
-      exp: 1757285847, // 999 years
+      iat: 1758270479,
+      exp: 33284312879, // 999 years
     };
 
     const payload: JwtPayload = await jwtService.verifyAsync(token);
