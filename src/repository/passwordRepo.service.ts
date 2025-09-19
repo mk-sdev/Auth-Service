@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { IPassword } from './interfaces/iPassword';
 import { MongoPasswordService } from './mongo/mongoPassword.service';
-// import { PgPasswordService } from './pg/pgPassword.service';
+import { PgPasswordService } from './pg/pgPassword.service';
 
 @Injectable()
 export class PasswordRepoService implements IPassword {
@@ -9,12 +9,11 @@ export class PasswordRepoService implements IPassword {
 
   constructor(
     private readonly mongoService: MongoPasswordService,
-    // private readonly pgService: PgPasswordService,
+    private readonly pgService: PgPasswordService,
   ) {
     if (process.env.DB_TYPE === 'mongo') {
       this.repoService = this.mongoService;
-    }
-    // else this.repoService = this.pgService;
+    } else this.repoService = this.pgService;
   }
 
   async changePassword(_id: string, password: string) {

@@ -26,16 +26,16 @@ import { RefreshToken } from './repository/pg/refresh-token.entity';
     MongooseModule.forRoot(
       process.env.MONGO_URI || 'mongodb://localhost:27017/imagehub',
     ),
-    // TypeOrmModule.forRoot({
-    //   type: 'postgres',
-    //   host: `localhost`,
-    //   port: 5432,
-    //   username: 'auth_user',
-    //   password: 'auth_password',
-    //   database: 'auth_db',
-    //   entities: [User, UserRole, RefreshToken],
-    //   synchronize: true,
-    // }),
+    TypeOrmModule.forRoot({
+      type: 'postgres',
+      host: process.env.DB_HOST || 'localhost',
+      port: +process.env.DB_PORT! || 5433,
+      username: process.env.DB_USER || 'auth_user',
+      password: process.env.DB_PASSWORD || 'auth_password',
+      database: process.env.DB_NAME || 'auth_db',
+      entities: [User, UserRole, RefreshToken],
+      synchronize: true,
+    }),
     ThrottlerModule.forRoot({
       throttlers: [
         {
