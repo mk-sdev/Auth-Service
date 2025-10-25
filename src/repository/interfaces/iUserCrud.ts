@@ -7,6 +7,10 @@ export interface IUserCrud {
   findOne(id: string): Promise<UserDocument | User | null>;
   findOneByEmail(email: string): Promise<UserDocument | User | null>;
   getAllUsers(): Promise<UserDocument[] | Pick<User, 'email'>[] | null>;
+  getUsers(
+    n: number,
+    i: number,
+  ): Promise<UserDocument[] | Pick<User, 'email'>[] | null>;
   insertOne({
     email,
     password,

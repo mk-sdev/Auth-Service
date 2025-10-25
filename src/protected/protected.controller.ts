@@ -1,13 +1,16 @@
 import {
   Body,
   Controller,
+  DefaultValuePipe,
   Get,
   HttpCode,
   HttpStatus,
   NotFoundException,
   Param,
+  ParseIntPipe,
   Patch,
   Put,
+  Query,
   Req,
   Res,
   UseGuards,
@@ -145,6 +148,17 @@ export class ProtectedController {
   @UseGuards(JwtGuard, RolesGuard)
   async getAllUsers() {
     const users = await this.userCrudRepoService.getAllUsers();
+    return users;
+  }
+
+  @Roles(Role.ADMIN)
+  @Get('users-paginated')
+  @UseGuards(JwtGuard, RolesGuard)
+  async getUsers(
+    @Query('n', new DefaultValuePipe(10), ParseIntPipe) n: number,
+    @Query('i', new DefaultValuePipe(0), ParseIntPipe) i: number,
+  ) {
+    const users = await this.userCrudRepoService.getUsers(n, i);
     return users;
   }
 }

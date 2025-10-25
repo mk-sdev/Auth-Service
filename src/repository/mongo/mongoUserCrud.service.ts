@@ -22,6 +22,14 @@ export class MongoUserCrudService implements IUserCrud {
     return await this.userModel.find({}, 'email').lean();
   }
 
+  async getUsers(n: number, i: number) {
+    return await this.userModel
+      .find({}, 'email') // wybierz tylko pole "email"
+      .skip(n * i) // pomiń n*i dokumentów
+      .limit(n) // pobierz n dokumentów
+      .lean(); // zwróć czyste obiekty JS (bez narzutu Mongoose)
+  }
+
   async insertOne({
     email,
     password,

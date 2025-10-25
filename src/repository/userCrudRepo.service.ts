@@ -32,6 +32,13 @@ export class UserCrudRepoService implements IUserCrud {
     return await this.repoService.getAllUsers();
   }
 
+  async getUsers(
+    n: number,
+    i: number,
+  ): Promise<UserDocument[] | Pick<User, 'email'>[] | null> {
+    return await this.repoService.getUsers(n, i);
+  }
+
   async insertOne({
     email,
     password,

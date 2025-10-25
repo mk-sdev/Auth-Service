@@ -25,6 +25,14 @@ export class PgUserCrudService implements IUserCrud {
     return await this.userRepository.find({ select: ['email'] });
   }
 
+  async getUsers(n: number, i: number): Promise<Pick<User, 'email'>[]> {
+    return await this.userRepository.find({
+      select: ['email'],
+      skip: n * i, // pomiń pierwsze n*i rekordów
+      take: n, // pobierz n rekordów
+    });
+  }
+
   async insertOne({
     email,
     password,
