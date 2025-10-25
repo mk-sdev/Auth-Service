@@ -268,7 +268,6 @@ export class CoreService {
     );
   }
 
-  // FIXME: ? tu nie powinno być email zamiast id?
   async setPassword(id: string, password: string, req: Request) {
     const { ip, path, method } = createAuditDetails(req);
 
@@ -299,7 +298,6 @@ export class CoreService {
     );
   }
 
-  // FIXME: ? tu nie powinno być email zamiast id?
   async markForDeletion(id: string, password: string, req: Request) {
     const { ip, path, method } = createAuditDetails(req);
 
@@ -311,8 +309,9 @@ export class CoreService {
         path,
         method,
       });
-      //TODO: should the app say if the user doesn't exist?
-      throw new ConflictException('The user of the given email doesn`t exist');
+      //FIXME: should the app say if the user doesn't exist?
+      throw new ConflictException('The user of the given ID doesn`t exist');
+      //return;
     }
 
     if (user.password) {

@@ -115,7 +115,6 @@ export class MailingService {
 
   // verifies a registration token
   async verifyToken(token: string): Promise<void> {
-    // TODO: add a cron job for removing unverified users
     const user =
       await this.verificationRepoService.findOneByVerificationToken(token);
     if (!user) {
@@ -190,7 +189,6 @@ export class MailingService {
   }
 
   async verifyEmail(token: string): Promise<void> {
-    // TODO: add a cron job for removing unverified emails
     const user = await this.verificationRepoService.findOneByEmailToken(token);
 
     if (!user) {
