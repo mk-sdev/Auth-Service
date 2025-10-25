@@ -164,7 +164,7 @@ describe('CoreService', () => {
 
       await expect(
         appService.changePassword('userId', 'abc', 'def', mockRequest),
-      ).rejects.toThrow('The user of the given email doesn`t exist');
+      ).rejects.toThrow('The user of the given ID doesn`t exist');
     });
 
     it('should throw if new password is same as current', async () => {
@@ -233,7 +233,7 @@ describe('CoreService', () => {
 
       await expect(
         appService.markForDeletion('userId', 'password', mockRequest),
-      ).rejects.toThrow('The user of the given email doesn`t exist');
+      ).rejects.toThrow('The user of the given ID doesn`t exist');
     });
 
     it('should throw if password is incorrect', async () => {

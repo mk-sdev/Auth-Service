@@ -245,7 +245,7 @@ export class CoreService {
         path,
         method,
       });
-      throw new ConflictException('The user of the given email doesn`t exist');
+      throw new ConflictException('The user of the given ID doesn`t exist');
     }
 
     const isPasswordValid = await this.hashService.verify(
