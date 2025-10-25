@@ -40,7 +40,7 @@ export class MailingService {
     subject: string,
     purpose: string,
     contextData?: Record<string, unknown>,
-    baseUrl: string = 'http://localhost:3000',
+    baseUrl: string = URL,
     tokenQueryParamName: string = 'token',
     path?: string,
   ) {
@@ -50,26 +50,29 @@ export class MailingService {
     const context = contextData
       ? { ...contextData, confirmationLink }
       : { confirmationLink };
-    console.log(
-      `
-        <h3>Welcome!</h3>
-        <p>Click the link below in order to ${purpose}:</p>
-        <a href="${confirmationLink}">${confirmationLink}</a>
-        <p>If that's not you, ignore this message.</p>
-      `,
-    );
-    await this.mailerService.sendMail({
-      to: toEmail,
-      subject,
-      template: undefined,
-      context,
-      html: `
+
+    if (process.env.node_env === 'production')
+      await this.mailerService.sendMail({
+        to: toEmail,
+        subject,
+        template: undefined,
+        context,
+        html: `
           <h3>Welcome!</h3>
           <p>Click the link below:</p>
           <a href="${confirmationLink}">${confirmationLink}</a>
           <p>If that's not you, ignore this message.</p>
         `,
-    });
+      });
+    else
+      console.log(
+        `
+        <h3>Welcome!</h3>
+        <p>Click the link below in order to ${purpose}:</p>
+        <a href="${confirmationLink}">${confirmationLink}</a>
+        <p>If that's not you, ignore this message.</p>
+      `,
+      );
   }
 
   async register(email: string, password: string): Promise<void> {
