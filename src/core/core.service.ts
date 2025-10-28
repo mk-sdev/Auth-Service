@@ -72,7 +72,7 @@ export class CoreService {
         method,
         email,
       });
-      throw new UnauthorizedException();
+      throw new UnauthorizedException('Invalid email or password.');
     }
 
     if (!user.isVerified) {
@@ -101,9 +101,10 @@ export class CoreService {
           method,
           email,
         });
-        throw new UnauthorizedException();
+        throw new UnauthorizedException('Invalid email or password.');
       }
     }
+
     //* if the user is found and the password matches, generate a JWT token and send it back
     const payload: NewPayload = {
       sub: user._id as string,
@@ -325,7 +326,7 @@ export class CoreService {
           path,
           method,
         });
-        throw new UnauthorizedException('Current password is incorrect');
+        throw new UnauthorizedException('Incorrect password');
       }
     }
 

@@ -110,7 +110,7 @@ export class MailingService {
       'Activate your account',
       'verify you account',
       undefined,
-      URL,
+      FRONTEND_URL,
       'token',
       '/verify-account',
     );
@@ -185,7 +185,7 @@ export class MailingService {
       'Confirm email address change',
       'confirm email change',
       {},
-      URL,
+      FRONTEND_URL,
       'token',
       '/verify-email',
     );

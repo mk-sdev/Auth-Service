@@ -29,7 +29,7 @@ export const account_verification_lifespan = 1000 * 60 * 20; // 20 min
 export const account_deletion_lifespan = 1000 * 60 * 60 * 24 * 14; //2 weeks
 
 export const URL = 'http://localhost:3000';
-export const FRONTEND_URL = 'http://localhost:8081';
+export const FRONTEND_URL = 'http://localhost:4200';
 export const OAUTH_REDIRECT_URI = 'http://localhost:3000/auth/google/callback';
 
 export const WEB_REDIRECT_URI = 'http://localhost:8081/oauth-callback';
