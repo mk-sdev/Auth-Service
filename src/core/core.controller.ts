@@ -92,7 +92,7 @@ export class CoreController {
       refreshToken = body!.refresh_token;
     }
 
-    // czyść ciasteczka tylko dla weba
+    // clear cookies only for browsers
     if (platform === 'web') {
       res.clearCookie('access_token', {
         httpOnly: true,
@@ -116,7 +116,25 @@ export class CoreController {
   @Patch('global-logout')
   @HttpCode(HttpStatus.OK)
   @UseGuards(JwtGuard)
-  async globalLogout(@Id() id: string) {
+  async globalLogout(
+    @Id() id: string,
+    @Platform() platform: 'web' | 'mobile',
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    if (platform === 'web') {
+      res.clearCookie('access_token', {
+        httpOnly: true,
+        secure: false,
+        sameSite: 'lax',
+        path: '/',
+      });
+      res.clearCookie('refresh_token', {
+        httpOnly: true,
+        secure: false,
+        sameSite: 'lax',
+        path: '/',
+      });
+    }
     await this.coreService.globalLogout(id);
   }
 
