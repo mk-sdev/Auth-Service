@@ -6,6 +6,7 @@ import {
   Headers,
   HttpCode,
   HttpStatus,
+  NotFoundException,
   Patch,
   Req,
   Res,
@@ -26,6 +27,7 @@ import { HashInterceptor } from '../utils/hash/hash.interceptor';
 import { CoreService } from './core.service';
 import { accessTokenOptions, refreshTokenOptions } from 'src/utils/constants';
 import { Platform } from 'src/decorators/platform.decorator';
+import { UserCrudRepoService } from 'src/repository/userCrudRepo.service';
 
 @Controller()
 @UseInterceptors(AuditInterceptor)
@@ -36,7 +38,10 @@ import { Platform } from 'src/decorators/platform.decorator';
   }),
 )
 export class CoreController {
-  constructor(private readonly coreService: CoreService) {}
+  constructor(
+    private readonly coreService: CoreService,
+    private userCrudRepoService: UserCrudRepoService,
+  ) {}
 
   @Get('hello')
   @AuditAction('HELLO')
@@ -219,31 +224,17 @@ export class CoreController {
     await this.coreService.markForDeletion(id, body.password, req);
   }
 
-  //* dev
   @Get('userinfo')
-  getUserInfo(@Headers('authorization') authHeader: string) {
-    // Check if there is a header and whether it is in the "bearer token" format
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      throw new UnauthorizedException(
-        'Missing or invalid Authorization header',
-      );
-    }
+  @UseGuards(JwtGuard)
+  async getUserInfo(@Id() id: string) {
+    const user = await this.userCrudRepoService.findOne(id);
 
-    const token = authHeader.split(' ')[1];
-    if (
-      !token ||
-      token === 'null' ||
-      token === 'undefined' ||
-      token.trim() === ''
-    ) {
-      throw new UnauthorizedException('Missing or invalid token');
-    }
+    if (!user) throw new NotFoundException('User not found');
 
     return {
-      id: 123,
-      name: 'Jan Kowalski',
-      email: 'jan.kowalski@example.com',
-      tokenReceived: token,
+      email: user.email,
+      roles: user.roles,
+      hasPassword: user.password ? true : false, // OAuth users may not have password
     };
   }
 }
