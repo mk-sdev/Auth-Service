@@ -2,6 +2,7 @@ import {
   ConflictException,
   Inject,
   Injectable,
+  NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
@@ -16,6 +17,7 @@ import { account_deletion_lifespan } from '../utils/constants';
 import { extractRoles } from '../utils/extractRoles';
 import { HashService } from '../utils/hash/hash.service';
 import { JwtPayload } from '../utils/interfaces';
+import { InvalidCredentialsException } from './invalid-credentials.exception';
 type NewPayload = Omit<JwtPayload, 'iat' | 'exp'>;
 
 @Injectable()
@@ -72,7 +74,7 @@ export class CoreService {
         method,
         email,
       });
-      throw new UnauthorizedException('Invalid email or password.');
+      throw new InvalidCredentialsException();
     }
 
     if (!user.isVerified) {
@@ -85,6 +87,11 @@ export class CoreService {
       throw new UnauthorizedException(
         'Verify your account in order to sign in.',
       );
+    }
+
+    if (password && !user.password) {
+      // users registered via OAuth don't have a password set
+      throw new InvalidCredentialsException();
     }
 
     if (password) {
@@ -101,7 +108,7 @@ export class CoreService {
           method,
           email,
         });
-        throw new UnauthorizedException('Invalid email or password.');
+        throw new InvalidCredentialsException();
       }
     }
 
