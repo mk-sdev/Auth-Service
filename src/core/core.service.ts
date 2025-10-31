@@ -234,7 +234,9 @@ export class CoreService {
     req: Request,
   ) {
     if (currentPassword === newPassword) {
-      throw new Error('New password cannot be the same as the old one');
+      throw new ConflictException(
+        'New password cannot be the same as the old one',
+      );
     }
 
     const { ip, path, method } = createAuditDetails(req);

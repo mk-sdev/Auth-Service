@@ -28,6 +28,7 @@ import { CoreService } from './core.service';
 import { accessTokenOptions, refreshTokenOptions } from 'src/utils/constants';
 import { Platform } from 'src/decorators/platform.decorator';
 import { UserCrudRepoService } from 'src/repository/userCrudRepo.service';
+import { SetPasswordDto } from 'src/dtos/set-password.dto';
 
 @Controller()
 @UseInterceptors(AuditInterceptor)
@@ -206,10 +207,10 @@ export class CoreController {
   @UseGuards(JwtGuard)
   async setPassword(
     @Id() id: string,
-    @Body() body: Omit<ChangePasswordDto, 'password'>,
+    @Body() body: SetPasswordDto,
     @Req() req: Request,
   ) {
-    return this.coreService.setPassword(id, body.newPassword, req);
+    return this.coreService.setPassword(id, body.password, req);
   }
 
   @Delete('delete-account')
