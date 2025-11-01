@@ -21,7 +21,7 @@ const createMockContext = (
     }),
   }) as unknown as ExecutionContext;
 
-describe('JwtGuard', () => {
+describe('JwtGuard - cookies', () => {
   let jwtService: JwtService;
   let guard: JwtGuard;
 

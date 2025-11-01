@@ -25,7 +25,7 @@ const createMockContext = (token: string): ExecutionContext => {
   } as unknown as ExecutionContext;
 };
 
-describe('JwtGuard', () => {
+describe('JwtGuard - headers', () => {
   let jwtService: JwtService;
   let guard: JwtGuard;
 
@@ -107,20 +107,4 @@ describe('JwtGuard', () => {
       UnauthorizedException,
     );
   });
-
-  // it('should throw UnauthorizedException if no token provided', async () => {
-  //   const context = {
-  //     switchToHttp: () => ({
-  //       getRequest: () => ({
-  //         headers: {
-  //           authorization: `Bearer `,
-  //         },
-  //       }),
-  //     }),
-  //   } as ExecutionContext;
-
-  //   await expect(guard.canActivate(context)).rejects.toThrow(
-  //     UnauthorizedException,
-  //   );
-  // });
 });

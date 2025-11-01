@@ -125,7 +125,7 @@ describe('CoreService', () => {
       // call the function
       await appService.logout(plainToken);
 
-      // Sprawdź wywołania
+      // check the calls
       expect(mockJwtRefreshService.verifyAsync).toHaveBeenCalledWith(
         plainToken,
       );
@@ -246,7 +246,7 @@ describe('CoreService', () => {
 
       await expect(
         appService.markForDeletion('userId', 'wrongpassword', mockRequest),
-      ).rejects.toThrow('Current password is incorrect');
+      ).rejects.toThrow('Incorrect password');
     });
 
     it('should mark user for deletion and save', async () => {
@@ -269,7 +269,8 @@ describe('CoreService', () => {
       );
 
       expect(mockUserRepo.markUserForDeletion).toHaveBeenCalled();
-      const callArgs = mockUserRepo.markUserForDeletion.mock.calls[0];
+      const callArgs = mockUserRepo.markUserForDeletion.mock
+        .calls[0] as unknown as [string, number];
       expect(callArgs[0]).toEqual(userMock.email);
 
       // deletionScheduledAt is a timestamp - check if it is within the expected range

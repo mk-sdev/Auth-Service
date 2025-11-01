@@ -44,7 +44,7 @@ describe('JwtGuard - missing token', () => {
   });
 
   it('should throw if neither header nor cookie provided', async () => {
-    const context = createMockContext(); // brak headers i cookies
+    const context = createMockContext();
 
     await expect(guard.canActivate(context)).rejects.toThrow(
       UnauthorizedException,
@@ -59,8 +59,16 @@ describe('JwtGuard - missing token', () => {
     );
   });
 
-  it('should throw if only headers are provided without Authorization', async () => {
+  it('should throw if no "authorization" header provided', async () => {
     const context = createMockContext({ 'x-custom-header': 'xyz' }, {});
+
+    await expect(guard.canActivate(context)).rejects.toThrow(
+      UnauthorizedException,
+    );
+  });
+
+  it('should throw if no header provided', async () => {
+    const context = createMockContext({}, {});
 
     await expect(guard.canActivate(context)).rejects.toThrow(
       UnauthorizedException,

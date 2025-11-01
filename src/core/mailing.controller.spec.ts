@@ -8,7 +8,6 @@ import { MailingService } from './mailing.service';
 import { plainToInstance } from 'class-transformer';
 import { validateSync } from 'class-validator';
 import { AuditLoggerService } from '../utils/audit/audit.service';
-// import { createAuditDetails } from '../utils/audit/audit-utils';
 
 describe('MailController (integration)', () => {
   let controller: MailingController;
