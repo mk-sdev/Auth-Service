@@ -3,7 +3,7 @@ import { IUserCrud } from '../interfaces/iUserCrud';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from './user.entity';
-import { SafeUserDto } from 'src/dtos/safeUser.dto';
+import { SafeUserDto } from 'src/dtos/safe-user.dto';
 import { Provider } from 'src/utils/interfaces';
 
 @Injectable()

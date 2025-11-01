@@ -19,7 +19,7 @@ import {
 import { Request, Response } from 'express';
 import { AuditAction } from '../decorators/audit-action.decorator';
 import { Id } from '../decorators/id.decorator';
-import { ChangePasswordDto } from '../dtos/changePassword.dto';
+import { ChangePasswordDto } from '../dtos/change-password.dto';
 import { LoginDto } from '../dtos/login.dto';
 import { JwtGuard } from '../guards/jwt.guard';
 import { AuditInterceptor } from '../utils/audit/audit.interceptor';

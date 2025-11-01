@@ -17,7 +17,7 @@ import { account_deletion_lifespan } from '../utils/constants';
 import { extractRoles } from '../utils/extractRoles';
 import { HashService } from '../utils/hash/hash.service';
 import { JwtPayload } from '../utils/interfaces';
-import { InvalidCredentialsException } from './invalid-credentials.exception';
+import { InvalidCredentialsException } from '../utils/invalid-credentials.exception';
 type NewPayload = Omit<JwtPayload, 'iat' | 'exp'>;
 
 @Injectable()

@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { IUserCrud } from './interfaces/iUserCrud';
 import { MongoUserCrudService } from './mongo/mongoUserCrud.service';
-import { SafeUserDto } from '../dtos/safeUser.dto';
+import { SafeUserDto } from '../dtos/safe-user.dto';
 import { UserDocument } from './mongo/user.schema';
 import { Provider } from '../utils/interfaces';
 import { PgUserCrudService } from './pg/pgUserCrud.service';

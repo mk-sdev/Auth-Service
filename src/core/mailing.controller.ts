@@ -14,10 +14,10 @@ import {
   UsePipes,
   ValidationPipe,
 } from '@nestjs/common';
-import { ChangeEmailDto } from '../dtos/changeEmail.dto';
+import { ChangeEmailDto } from '../dtos/change-email.dto';
 import { EmailDto } from '../dtos/email.dto';
 import { RegisterDto } from '../dtos/register.dto';
-import { ResetPasswordDto } from '../dtos/resetPassword.dto';
+import { ResetPasswordDto } from '../dtos/reset-password.dto';
 import { Id } from '../decorators/id.decorator';
 import { JwtGuard } from '../guards/jwt.guard';
 import { MailingService } from './mailing.service';

@@ -2,7 +2,7 @@ import { ValidationPipe } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { AppController } from './app.controller';
 import { CoreService } from './src/core/core.service';
-import { ChangePasswordDto } from './src/dtos/changePassword.dto';
+import { ChangePasswordDto } from './src/dtos/change-password.dto';
 import { JwtGuard } from './src/guards/jwt.guard';
 import { RegisterDto } from './src/dtos/register.dto';
 import { LoginDto } from './src/dtos/login.dto';

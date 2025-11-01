@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { HashInterceptor } from './hash.interceptor';
 import { HashService } from './hash.service';
-import { MetricsModule } from '../metrics/metrics.module';
+import { MetricsModule } from './metrics/metrics.module';
 
 @Module({
   providers: [HashService, HashInterceptor],

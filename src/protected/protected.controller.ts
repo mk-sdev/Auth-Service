@@ -22,7 +22,7 @@ import { Roles } from '../decorators/roles.decorator';
 import { JwtGuard } from '../guards/jwt.guard';
 import { RolesGuard } from '../guards/roles.guard';
 import { LoginDto } from '../dtos/login.dto';
-import { SafeUserDto } from '../dtos/safeUser.dto';
+import { SafeUserDto } from '../dtos/safe-user.dto';
 import { HashService } from '../utils/hash/hash.service';
 import { PasswordRepoService } from '../repository/passwordRepo.service';
 import { TokenRepoService } from '../repository/tokenRepo.service';

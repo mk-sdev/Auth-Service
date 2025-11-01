@@ -1,5 +1,5 @@
 import { Provider } from '../../utils/interfaces';
-import { SafeUserDto } from '../../dtos/safeUser.dto';
+import { SafeUserDto } from '../../dtos/safe-user.dto';
 import { UserDocument } from '../mongo/user.schema';
 import { User } from '../pg/user.entity';
 
