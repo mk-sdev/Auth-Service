@@ -1,79 +1,36 @@
-import { MailerService } from '@nestjs-modules/mailer';
 import {
   BadRequestException,
   ConflictException,
   Injectable,
-  InternalServerErrorException,
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { randomUUID } from 'crypto';
+import { Request } from 'express';
+import { PasswordRepoService } from '../repository/passwordRepo.service';
+import { UserCrudRepoService } from '../repository/userCrudRepo.service';
+import { VerificationRepoService } from '../repository/verificationRepo.service';
+import { createAuditDetails } from '../utils/audit/audit-utils';
+import { AuditLoggerService } from '../utils/audit/audit.service';
 import {
   account_verification_lifespan,
   email_change_lifespan,
   FRONTEND_URL,
   password_reset_lifespan,
-  URL,
 } from '../utils/constants';
 import { HashService } from '../utils/hash/hash.service';
-import { PasswordRepoService } from '../repository/passwordRepo.service';
-import { VerificationRepoService } from '../repository/verificationRepo.service';
-import { UserCrudRepoService } from '../repository/userCrudRepo.service';
-import { createAuditDetails } from '../utils/audit/audit-utils';
-import { Request } from 'express';
-import { AuditLoggerService } from '../utils/audit/audit.service';
+import { MailService } from './mail.service';
 
 @Injectable()
-export class MailingService {
+export class TokenService {
   constructor(
     private readonly passwordRepoService: PasswordRepoService,
     private readonly verificationRepoService: VerificationRepoService,
     private readonly userCrudRepoService: UserCrudRepoService,
-    private readonly mailerService: MailerService,
     private readonly hashService: HashService,
     private readonly auditLogger: AuditLoggerService,
+    private readonly mailService: MailService,
   ) {}
-
-  async sendMailWithToken(
-    toEmail: string,
-    token: string,
-    subject: string,
-    purpose: string,
-    contextData?: Record<string, unknown>,
-    baseUrl: string = URL,
-    tokenQueryParamName: string = 'token',
-    path?: string,
-  ) {
-    const tokenPath = path ? `${path}` : '';
-    const confirmationLink = `${baseUrl}${tokenPath}?${tokenQueryParamName}=${token}`;
-
-    const context = contextData
-      ? { ...contextData, confirmationLink }
-      : { confirmationLink };
-
-    if (process.env.node_env === 'production')
-      await this.mailerService.sendMail({
-        to: toEmail,
-        subject,
-        template: undefined,
-        context,
-        html: `
-          <h3>Welcome!</h3>
-          <p>Click the link below:</p>
-          <a href="${confirmationLink}">${confirmationLink}</a>
-          <p>If that's not you, ignore this message.</p>
-        `,
-      });
-    else
-      console.log(
-        `
-        <h3>Welcome!</h3>
-        <p>Click the link below in order to ${purpose}:</p>
-        <a href="${confirmationLink}">${confirmationLink}</a>
-        <p>If that's not you, ignore this message.</p>
-      `,
-      );
-  }
 
   async register(email: string, password: string): Promise<void> {
     const existingUser = await this.userCrudRepoService.findOneByEmail(email);
@@ -104,7 +61,7 @@ export class MailingService {
         verificationTokenExpires,
       });
 
-    await this.sendMailWithToken(
+    await this.mailService.sendMailWithToken(
       email,
       verificationToken,
       'Activate your account',
@@ -179,7 +136,7 @@ export class MailingService {
       emailChangeTokenExpires,
     );
 
-    await this.sendMailWithToken(
+    await this.mailService.sendMailWithToken(
       newEmail,
       verificationToken,
       'Confirm email address change',
@@ -238,7 +195,7 @@ export class MailingService {
       passwordResetTokenExpires,
     );
 
-    await this.sendMailWithToken(
+    await this.mailService.sendMailWithToken(
       email,
       resetToken,
       'Password reset instruction',

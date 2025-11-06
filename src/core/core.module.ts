@@ -5,13 +5,14 @@ import { AuditModule } from '../utils/audit/audit.module';
 import { TokensModule } from '../utils/tokens.module';
 import { CoreController } from './core.controller';
 import { CoreService } from './core.service';
-import { MailingController } from './mailing.controller';
-import { MailingService } from './mailing.service';
+import { TokenController } from './token.controller';
+import { TokenService } from './token.service';
+import { MailService } from './mail.service';
 
 @Module({
   imports: [RepositoryModule, TokensModule, AuditModule, HashModule],
-  controllers: [CoreController, MailingController],
-  providers: [CoreService, MailingService],
+  controllers: [CoreController, TokenController],
+  providers: [CoreService, TokenService, MailService],
   exports: [CoreService],
 })
 export class CoreModule {}

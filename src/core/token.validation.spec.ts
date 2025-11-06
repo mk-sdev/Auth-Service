@@ -3,21 +3,21 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ChangeEmailDto } from '../dtos/change-email.dto';
 import { EmailDto } from '../dtos/email.dto';
 import { JwtGuard } from '../guards/jwt.guard';
-import { MailingController } from './mailing.controller';
-import { MailingService } from './mailing.service';
+import { TokenController } from './token.controller';
+import { TokenService } from './token.service';
 import { plainToInstance } from 'class-transformer';
 import { validateSync } from 'class-validator';
 import { AuditLoggerService } from '../utils/audit/audit.service';
 
 describe('MailController (integration)', () => {
-  let controller: MailingController;
+  let controller: TokenController;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      controllers: [MailingController],
+      controllers: [TokenController],
       providers: [
         {
-          provide: MailingService,
+          provide: TokenService,
           useValue: {},
         },
         {
@@ -34,7 +34,7 @@ describe('MailController (integration)', () => {
       .useValue({ canActivate: () => true })
       .compile();
 
-    controller = module.get<MailingController>(MailingController);
+    controller = module.get<TokenController>(TokenController);
   });
 
   describe('ValidationPipe for EmailDto', () => {

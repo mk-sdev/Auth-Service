@@ -20,7 +20,7 @@ import { RegisterDto } from '../dtos/register.dto';
 import { ResetPasswordDto } from '../dtos/reset-password.dto';
 import { Id } from '../decorators/id.decorator';
 import { JwtGuard } from '../guards/jwt.guard';
-import { MailingService } from './mailing.service';
+import { TokenService } from './token.service';
 import { AuditInterceptor } from '../utils/audit/audit.interceptor';
 import { AuditAction } from '../decorators/audit-action.decorator';
 import { Request } from 'express';
@@ -34,8 +34,8 @@ import { Request } from 'express';
     forbidNonWhitelisted: true, // throws exceptions if encounters additional attributes
   }),
 )
-export class MailingController {
-  constructor(private readonly mailService: MailingService) {}
+export class TokenController {
+  constructor(private readonly mailService: TokenService) {}
 
   @Post('register')
   @AuditAction('REGISTER')

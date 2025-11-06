@@ -3,7 +3,7 @@ import { CoreService } from './core.service';
 import { PasswordRepoService } from '../repository/passwordRepo.service';
 import { TokenRepoService } from '../repository/tokenRepo.service';
 import { UserCrudRepoService } from '../repository/userCrudRepo.service';
-import { MailingService } from '../core/mailing.service';
+import { TokenService } from './token.service';
 import { JwtPayload, Role } from '../utils/interfaces';
 import { HashService } from '../utils/hash/hash.service';
 import { Request } from 'express';
@@ -74,7 +74,7 @@ describe('CoreService', () => {
           useValue: mockJwtRefreshService,
         },
         {
-          provide: MailingService,
+          provide: TokenService,
           useValue: mockMailService,
         },
         {
