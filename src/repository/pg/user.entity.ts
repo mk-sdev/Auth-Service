@@ -22,10 +22,10 @@ export class User {
   @Column({ type: 'varchar', nullable: true })
   password?: string;
 
-  @OneToMany(() => UserRole, (role) => role.user, { cascade: true })
+  @OneToMany(() => UserRole, (role) => role.userId, { cascade: true })
   roles: Relation<UserRole[]>;
 
-  @OneToMany(() => RefreshToken, (token) => token.user, { cascade: true })
+  @OneToMany(() => RefreshToken, (token) => token.userId, { cascade: true })
   refreshTokens: Relation<RefreshToken[]>;
 
   @Column({
@@ -35,36 +35,48 @@ export class User {
   })
   provider: Provider;
 
-  @Column({ name: 'isverified', type: 'boolean', default: false })
+  @Column({ name: 'is_verified', type: 'boolean', default: false })
   isVerified: boolean;
 
-  @Index({ unique: true, where: '"verificationtoken" IS NOT NULL' })
-  @Column({ name: 'verificationtoken', type: 'varchar', nullable: true })
+  @Index({ unique: true, where: '"verification_token" IS NOT NULL' })
+  @Column({ name: 'verification_token', type: 'varchar', nullable: true })
   verificationToken?: string | null;
 
-  @Column({ name: 'verificationtokenexpires', type: 'bigint', nullable: true })
+  @Column({
+    name: 'verification_token_expires',
+    type: 'bigint',
+    nullable: true,
+  })
   verificationTokenExpires?: number | null;
 
-  @Column({ name: 'pendingemail', type: 'varchar', nullable: true })
+  @Column({ name: 'pending_email', type: 'varchar', nullable: true })
   pendingEmail?: string | null;
 
-  @Index({ unique: true, where: '"emailchangetoken" IS NOT NULL' })
-  @Column({ name: 'emailchangetoken', type: 'varchar', nullable: true })
+  @Index({ unique: true, where: '"email_change_token" IS NOT NULL' })
+  @Column({ name: 'email_change_token', type: 'varchar', nullable: true })
   emailChangeToken?: string | null;
 
-  @Column({ name: 'emailchangetokenexpires', type: 'bigint', nullable: true })
+  @Column({
+    name: 'email_change_token_expires',
+    type: 'bigint',
+    nullable: true,
+  })
   emailChangeTokenExpires?: number | null;
 
-  @Index({ unique: true, where: '"passwordresettoken" IS NOT NULL' })
-  @Column({ name: 'passwordresettoken', type: 'varchar', nullable: true })
+  @Index({ unique: true, where: '"password_reset_token" IS NOT NULL' })
+  @Column({ name: 'password_reset_token', type: 'varchar', nullable: true })
   passwordResetToken?: string | null;
 
-  @Column({ name: 'passwordresettokenexpires', type: 'bigint', nullable: true })
+  @Column({
+    name: 'password_reset_token_expires',
+    type: 'bigint',
+    nullable: true,
+  })
   passwordResetTokenExpires?: number | null;
 
-  @Column({ name: 'isdeletionpending', type: 'boolean', default: false })
+  @Column({ name: 'is_deletion_pending', type: 'boolean', default: false })
   isDeletionPending?: boolean | null;
 
-  @Column({ name: 'deletionscheduledat', type: 'bigint', nullable: true })
+  @Column({ name: 'deletion_scheduled_at', type: 'bigint', nullable: true })
   deletionScheduledAt?: number | null;
 }

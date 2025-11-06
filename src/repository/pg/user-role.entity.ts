@@ -1,28 +1,31 @@
 import {
   Entity,
-  Column,
-  PrimaryGeneratedColumn,
+  PrimaryColumn,
   ManyToOne,
+  JoinColumn,
   Index,
   Relation,
+  Column,
 } from 'typeorm';
 import { User } from './user.entity';
 import { Role } from '../../utils/interfaces';
 
 @Entity('user_roles')
+//@Index('user_role_index', ['role', 'user'], { unique: true })
 export class UserRole {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
-
-  @Index()
-  @Column({
+  @PrimaryColumn({
     type: 'enum',
     enum: Role,
   })
   role: Role;
 
-  @ManyToOne(() => User, (user) => user.roles, {
-    onDelete: 'CASCADE',
-  })
-  user: Relation<User>;
+  @PrimaryColumn({ name: 'user_id', type: 'uuid' })
+  userId: string; // FK
+
+  // @PrimaryColumn()
+  // @ManyToOne(() => User, (user) => user.roles, {
+  //   onDelete: 'CASCADE',
+  // })
+  // @JoinColumn()
+  // user: User;
 }

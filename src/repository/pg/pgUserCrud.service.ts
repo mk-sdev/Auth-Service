@@ -28,8 +28,8 @@ export class PgUserCrudService implements IUserCrud {
   async getUsers(n: number, i: number): Promise<Pick<User, 'email'>[]> {
     return await this.userRepository.find({
       select: ['email'],
-      skip: n * i, // pomiń pierwsze n*i rekordów
-      take: n, // pobierz n rekordów
+      skip: n * i, // skip n*i records
+      take: n, // take n records
     });
   }
 
@@ -50,6 +50,7 @@ export class PgUserCrudService implements IUserCrud {
       verificationToken,
       verificationTokenExpires,
     });
+    //TODO: add new record to user_roles table
     return await this.userRepository.save(user);
   }
 
@@ -59,6 +60,7 @@ export class PgUserCrudService implements IUserCrud {
       provider: provider,
       isVerified: true,
     });
+    //TODO: add new record to user_roles table
     return await this.userRepository.save(user);
   }
 
@@ -75,7 +77,7 @@ export class PgUserCrudService implements IUserCrud {
     user.email = email;
     user.isVerified = isVerified;
 
-    // usuń stare role i dodaj nowe
+    // delete old roles and set new ones
     user.roles = roles.map((role) =>
       this.userRepository.manager.create('UserRole', { role, user }),
     );

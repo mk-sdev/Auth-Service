@@ -31,10 +31,10 @@ export class PgPasswordService implements IPassword {
 
     if (!user) return;
 
-    // usuń wszystkie refresh tokens
-    await this.refreshTokenRepository.delete({ user: { _id: user._id } });
+    // delete all refresh tokens
+    await this.refreshTokenRepository.delete({ userId: user._id });
 
-    // zaktualizuj hasło + provider
+    // update the password and set provider to LOCAL
     user.password = hashedPassword;
     user.provider = Provider.LOCAL;
 
@@ -52,10 +52,10 @@ export class PgPasswordService implements IPassword {
 
     if (!user) return;
 
-    // usuń refresh tokens
-    await this.refreshTokenRepository.delete({ user: { _id: user._id } });
+    // delete refresh tokens
+    await this.refreshTokenRepository.delete({ userId: user._id });
 
-    // ustaw nowe hasło i wyczyść token resetu
+    // set new password and clear reset token fields
     user.password = newPassword;
     user.passwordResetToken = null;
     user.passwordResetTokenExpires = null;

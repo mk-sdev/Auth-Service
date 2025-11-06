@@ -19,7 +19,10 @@ export class PgTokenService implements IToken {
     const user = await this.userRepository.findOne({ where: { _id } });
     if (!user) return;
 
-    const refreshToken = this.refreshTokenRepository.create({ token, user });
+    const refreshToken = this.refreshTokenRepository.create({
+      token,
+      userId: user._id,
+    });
     await this.refreshTokenRepository.save(refreshToken);
   }
 
@@ -29,34 +32,37 @@ export class PgTokenService implements IToken {
     newToken: string,
   ): Promise<void> {
     const old = await this.refreshTokenRepository.findOne({
-      where: { token: oldToken, user: { _id } },
+      where: { token: oldToken, userId: _id },
       relations: ['user'],
     });
 
     if (old) {
-      // aktualizacja tokenu
+      // token update
       await this.refreshTokenRepository.remove(old);
     }
 
-    // dodanie nowego tokenu
+    // add new token
     const user = await this.userRepository.findOne({ where: { _id } });
     if (!user) return;
 
     const newRefreshToken = this.refreshTokenRepository.create({
       token: newToken,
-      user,
+      userId: user._id,
     });
     await this.refreshTokenRepository.save(newRefreshToken);
   }
 
   async removeRefreshToken(userId: string, token: string): Promise<void> {
-    await this.refreshTokenRepository.delete({ token, user: { _id: userId } });
+    await this.refreshTokenRepository.delete({
+      token,
+      userId: userId,
+    });
   }
 
   async trimRefreshTokens(userId: string, maxTokens: number): Promise<void> {
     const tokens = await this.refreshTokenRepository.find({
-      where: { user: { _id: userId } },
-      order: { token: 'DESC' }, // zakładamy, że tokeny najnowsze mają większe wartości (jeśli nie, dodaj createdAt)
+      where: { userId },
+      order: { token: 'DESC' },
     });
 
     if (tokens.length <= maxTokens) return;
@@ -66,6 +72,6 @@ export class PgTokenService implements IToken {
   }
 
   async clearTokens(_id: string): Promise<void> {
-    await this.refreshTokenRepository.delete({ user: { _id } });
+    await this.refreshTokenRepository.delete({ userId: _id });
   }
 }
