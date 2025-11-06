@@ -44,10 +44,14 @@ export class CoreController {
     private userCrudRepoService: UserCrudRepoService,
   ) {}
 
-  @Get('hello')
-  @AuditAction('HELLO')
-  getHello(): string {
-    return 'Hello World!';
+  @Get('health-check')
+  getHealthStatus(): { uptime: number; status: string; timestamp: Date } {
+    const status = {
+      uptime: process.uptime(),
+      status: 'ok',
+      timestamp: new Date(),
+    };
+    return status;
   }
 
   @Patch('login')
