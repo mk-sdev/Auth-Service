@@ -2,7 +2,6 @@ import {
   ConflictException,
   Inject,
   Injectable,
-  NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
@@ -18,6 +17,7 @@ import { extractRoles } from '../utils/extractRoles';
 import { HashService } from '../utils/hash/hash.service';
 import { JwtPayload } from '../utils/interfaces';
 import { InvalidCredentialsException } from '../utils/invalid-credentials.exception';
+import { MailService } from './mail.service';
 type NewPayload = Omit<JwtPayload, 'iat' | 'exp'>;
 
 @Injectable()
@@ -33,6 +33,7 @@ export class CoreService {
     private readonly hashService: HashService,
     @Inject('REDIS_CLIENT') private readonly redis: Redis,
     private readonly auditLogger: AuditLoggerService,
+    private readonly mailService: MailService,
   ) {}
 
   async login(
@@ -61,6 +62,7 @@ export class CoreService {
         email,
         attempts,
       });
+      await this.mailService.sendSuspiciousLoginEmail(email, ip);
       throw new UnauthorizedException(
         'Too many login attempts. Try again later.',
       );
@@ -344,5 +346,6 @@ export class CoreService {
       user.email,
       deletionScheduledAt,
     );
+    await this.mailService.sendAccountDeletionAlert(user.email);
   }
 }
