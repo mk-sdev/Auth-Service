@@ -22,10 +22,9 @@ export class UserRole {
   @PrimaryColumn({ name: 'user_id', type: 'uuid' })
   userId: string; // FK
 
-  // @PrimaryColumn()
-  // @ManyToOne(() => User, (user) => user.roles, {
-  //   onDelete: 'CASCADE',
-  // })
-  // @JoinColumn()
-  // user: User;
+  @ManyToOne(() => User, (user) => user.roles, {
+    onDelete: 'CASCADE',
+  })
+  @JoinColumn({ name: 'user_id' })
+  user: Relation<User>;
 }

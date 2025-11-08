@@ -5,12 +5,16 @@ import { Repository } from 'typeorm';
 import { User } from './user.entity';
 import { SafeUserDto } from 'src/dtos/safe-user.dto';
 import { Provider } from 'src/utils/interfaces';
+import { UserRole } from './user-role.entity';
+import { Role } from 'src/utils/interfaces';
 
 @Injectable()
 export class PgUserCrudService implements IUserCrud {
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    @InjectRepository(UserRole)
+    private readonly roleRepository: Repository<UserRole>,
   ) {}
 
   async findOne(_id: string): Promise<User | null> {
@@ -49,18 +53,24 @@ export class PgUserCrudService implements IUserCrud {
       password,
       verificationToken,
       verificationTokenExpires,
+      roles: [
+        {
+          role: Role.USER,
+        },
+      ],
     });
-    //TODO: add new record to user_roles table
+
     return await this.userRepository.save(user);
   }
 
   async insertOne_OAuth(email: string, provider: Provider): Promise<User> {
     const user = this.userRepository.create({
       email,
-      provider: provider,
+      provider,
       isVerified: true,
+      roles: [{ role: Role.USER }],
     });
-    //TODO: add new record to user_roles table
+
     return await this.userRepository.save(user);
   }
 
