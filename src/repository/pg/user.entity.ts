@@ -22,10 +22,10 @@ export class User {
   @Column({ type: 'varchar', nullable: true })
   password?: string;
 
-  @OneToMany(() => UserRole, (role) => role.userId, { cascade: true })
+  @OneToMany(() => UserRole, (role) => role.user, { cascade: true })
   roles: Relation<UserRole[]>;
 
-  @OneToMany(() => RefreshToken, (token) => token.userId, { cascade: true })
+  @OneToMany(() => RefreshToken, (token) => token.user, { cascade: true })
   refreshTokens: Relation<RefreshToken[]>;
 
   @Column({
