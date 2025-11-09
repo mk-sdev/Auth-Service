@@ -8,6 +8,13 @@ import { UserDocument } from './user.schema';
 export class MongoTokenService implements IToken {
   constructor(@InjectModel('User') private userModel: Model<UserDocument>) {}
 
+  async getAllTokens(userId: string): Promise<string[]> {
+    const user = await this.userModel
+      .findById(userId, { refreshTokens: 1 })
+      .lean();
+    return user?.refreshTokens || [];
+  }
+
   async addRefreshToken(id: string, token: string): Promise<void> {
     await this.userModel.updateOne(
       { _id: id },

@@ -1,20 +1,16 @@
 import { Injectable } from '@nestjs/common';
-import { IUserCrud } from '../interfaces/iUserCrud';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { User } from './user.entity';
 import { SafeUserDto } from 'src/dtos/safe-user.dto';
-import { Provider } from 'src/utils/interfaces';
-import { UserRole } from './user-role.entity';
-import { Role } from 'src/utils/interfaces';
+import { Provider, Role } from 'src/utils/interfaces';
+import { Repository } from 'typeorm';
+import { IUserCrud } from '../interfaces/iUserCrud';
+import { User } from './user.entity';
 
 @Injectable()
 export class PgUserCrudService implements IUserCrud {
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
-    @InjectRepository(UserRole)
-    private readonly roleRepository: Repository<UserRole>,
   ) {}
 
   async findOne(_id: string): Promise<User | null> {

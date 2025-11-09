@@ -1,4 +1,5 @@
 export interface IToken {
+  getAllTokens(userId: string): Promise<string[]>;
   addRefreshToken(id: string, token: string): Promise<void>;
   replaceRefreshToken(
     id: string,

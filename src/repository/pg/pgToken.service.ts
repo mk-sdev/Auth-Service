@@ -15,6 +15,14 @@ export class PgTokenService implements IToken {
     private readonly refreshTokenRepository: Repository<RefreshToken>,
   ) {}
 
+  async getAllTokens(userId: string): Promise<string[]> {
+    const tokens = await this.refreshTokenRepository.find({
+      where: { userId },
+      select: ['token'],
+    });
+    return tokens.map((t) => t.token);
+  }
+
   async addRefreshToken(_id: string, token: string): Promise<void> {
     const user = await this.userRepository.findOne({ where: { _id } });
     if (!user) return;

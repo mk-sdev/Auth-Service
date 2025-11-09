@@ -16,6 +16,10 @@ export class TokenRepoService implements IToken {
     } else this.repoService = this.pgService;
   }
 
+  async getAllTokens(userId: string): Promise<string[]> {
+    return await this.repoService.getAllTokens(userId);
+  }
+
   async addRefreshToken(id: string, token: string): Promise<void> {
     await this.repoService.addRefreshToken(id, token);
   }

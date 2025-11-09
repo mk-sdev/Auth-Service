@@ -18,6 +18,8 @@ import { HashService } from '../utils/hash/hash.service';
 import { JwtPayload } from '../utils/interfaces';
 import { InvalidCredentialsException } from '../utils/invalid-credentials.exception';
 import { MailService } from './mail.service';
+import { UserDocument } from 'src/repository/mongo/user.schema';
+import { User } from 'src/repository/pg/user.entity';
 type NewPayload = Omit<JwtPayload, 'iat' | 'exp'>;
 
 @Injectable()
@@ -152,22 +154,18 @@ export class CoreService {
       const payload: JwtPayload =
         await this.refreshTokenService.verifyAsync(refresh_token);
 
-      //get the user
-      const user = await this.userCrudRepoService.findOne(payload.sub);
-      //iterate over its refreshTokens
-      if (!user) throw new UnauthorizedException('Invalid refresh token');
-      for (const hashedToken of user.refreshTokens) {
-        //compare via this.hashService.verify
-        const isMatch = await this.hashService.verify(
-          typeof hashedToken === 'object' ? hashedToken.token : hashedToken,
-          refresh_token,
-        );
+      const refreshTokens: string[] = await this.tokenRepoService.getAllTokens(
+        payload.sub,
+      );
+
+      if (!refreshTokens.length)
+        throw new UnauthorizedException('Invalid refresh token');
+
+      //iterate over refreshTokens
+      for (const t of refreshTokens) {
+        const isMatch = await this.hashService.verify(t, refresh_token);
         if (isMatch) {
-          //removed the token from the db
-          await this.tokenRepoService.removeRefreshToken(
-            payload.sub, //
-            typeof hashedToken === 'object' ? hashedToken.token : hashedToken,
-          );
+          await this.tokenRepoService.removeRefreshToken(payload.sub, t);
         }
       }
     } catch (err) {
