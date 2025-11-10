@@ -1,9 +1,10 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { SafeUserDto } from 'src/dtos/safe-user.dto';
 import { Provider, Role } from 'src/utils/interfaces';
 import { Repository } from 'typeorm';
 import { IUserCrud } from '../interfaces/iUserCrud';
+import { UserRole } from './user-role.entity';
 import { User } from './user.entity';
 
 @Injectable()
@@ -11,6 +12,8 @@ export class PgUserCrudService implements IUserCrud {
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    @InjectRepository(UserRole)
+    private readonly roleRepository: Repository<UserRole>,
   ) {}
 
   async findOne(_id: string): Promise<User | null> {
@@ -78,14 +81,25 @@ export class PgUserCrudService implements IUserCrud {
       where: { _id },
       relations: ['roles'],
     });
+
     if (!user) return;
 
     user.email = email;
     user.isVerified = isVerified;
 
-    // delete old roles and set new ones
-    user.roles = roles.map((role) =>
-      this.userRepository.manager.create('UserRole', { role, user }),
+    // remove old roles
+    await this.roleRepository.remove(user.roles);
+
+    // add new roles
+    user.roles = await Promise.all(
+      // eslint-disable-next-line @typescript-eslint/require-await
+      roles.map(async (role) => {
+        const userRole = this.userRepository.manager.create(UserRole, {
+          role,
+          user, // assign user to correctly set up user_id
+        });
+        return userRole;
+      }),
     );
 
     await this.userRepository.save(user);
@@ -135,5 +149,18 @@ export class PgUserCrudService implements IUserCrud {
     user.deletionScheduledAt = deletionScheduledAt;
 
     await this.userRepository.save(user);
+  }
+
+  async getUserRoles(id: string): Promise<Role[]> {
+    const user = await this.userRepository.findOne({
+      where: { _id: id },
+      relations: ['roles'],
+    });
+
+    if (!user || user.roles.length === 0) {
+      throw new NotFoundException('User roles not found');
+    }
+
+    return user.roles.map((userRole) => userRole.role);
   }
 }

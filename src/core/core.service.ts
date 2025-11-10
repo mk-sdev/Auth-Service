@@ -13,13 +13,11 @@ import { UserCrudRepoService } from '../repository/userCrudRepo.service';
 import { createAuditDetails } from '../utils/audit/audit-utils';
 import { AuditLoggerService } from '../utils/audit/audit.service';
 import { account_deletion_lifespan } from '../utils/constants';
-import { extractRoles } from '../utils/extractRoles';
+// import { extractRoles } from '../utils/extractRoles';
 import { HashService } from '../utils/hash/hash.service';
-import { JwtPayload } from '../utils/interfaces';
+import { JwtPayload, Role } from '../utils/interfaces';
 import { InvalidCredentialsException } from '../utils/invalid-credentials.exception';
 import { MailService } from './mail.service';
-import { UserDocument } from 'src/repository/mongo/user.schema';
-import { User } from 'src/repository/pg/user.entity';
 type NewPayload = Omit<JwtPayload, 'iat' | 'exp'>;
 
 @Injectable()
@@ -119,7 +117,7 @@ export class CoreService {
     //* if the user is found and the password matches, generate a JWT token and send it back
     const payload: NewPayload = {
       sub: user._id as string,
-      roles: extractRoles(user.roles),
+      roles: user.roles as Role[],
     };
     const access_token = await this.accessTokenService.signAsync(payload);
     const refresh_token = await this.refreshTokenService.signAsync(payload);
@@ -194,8 +192,7 @@ export class CoreService {
 
       const newPayload: NewPayload = {
         sub: user._id as string,
-        //FIXME: create getUserRoles method
-        roles: extractRoles(user.roles ?? ['USER']),
+        roles: await this.userCrudRepoService.getUserRoles(user._id as string),
       };
 
       const newAccessToken =

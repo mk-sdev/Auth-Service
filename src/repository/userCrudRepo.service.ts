@@ -3,7 +3,7 @@ import { IUserCrud } from './interfaces/iUserCrud';
 import { MongoUserCrudService } from './mongo/mongoUserCrud.service';
 import { SafeUserDto } from '../dtos/safe-user.dto';
 import { UserDocument } from './mongo/user.schema';
-import { Provider } from '../utils/interfaces';
+import { Provider, Role } from '../utils/interfaces';
 import { PgUserCrudService } from './pg/pgUserCrud.service';
 import { User } from './pg/user.entity';
 
@@ -89,5 +89,9 @@ export class UserCrudRepoService implements IUserCrud {
     deletionScheduledAt: number,
   ): Promise<void> {
     return this.repoService.markUserForDeletion(email, deletionScheduledAt);
+  }
+
+  async getUserRoles(id: string): Promise<Role[]> {
+    return this.repoService.getUserRoles(id);
   }
 }

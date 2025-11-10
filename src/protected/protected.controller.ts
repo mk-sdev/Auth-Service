@@ -35,8 +35,8 @@ import { CoreService } from 'src/core/core.service';
 import { Request, Response } from 'express';
 import { accessTokenOptions, refreshTokenOptions } from 'src/utils/constants';
 import { User } from 'src/repository/pg/user.entity';
-import { UserRole } from 'src/repository/pg/user-role.entity';
-import { extractRoles } from 'src/utils/extractRoles';
+// import { UserRole } from 'src/repository/pg/user-role.entity';
+// import { extractRoles } from 'src/utils/extractRoles';
 
 @UseInterceptors(AuditInterceptor)
 @Controller('protected')
@@ -86,7 +86,7 @@ export class ProtectedController {
     return {
       _id: user._id as string,
       email: user.email,
-      roles: extractRoles(user.roles),
+      roles: await this.userCrudRepoService.getUserRoles(user._id as string),
       isVerified: user.isVerified,
       provider: user.provider,
     };
@@ -106,7 +106,7 @@ export class ProtectedController {
     return {
       _id: user._id as string,
       email: user.email,
-      roles: extractRoles(user.roles),
+      roles: await this.userCrudRepoService.getUserRoles(user._id as string),
       isVerified: user.isVerified,
       provider: user.provider,
     };
@@ -129,7 +129,7 @@ export class ProtectedController {
   @UseGuards(JwtGuard, RolesGuard)
   async changePassword(
     @Param('id') id: string,
-    @Body() body: Pick<LoginDto, 'password'>, //? Why not registerDto?
+    @Body() body: Pick<LoginDto, 'password'>, //? Why not setPasswordDto?
   ): Promise<void> {
     const hashedPassword = await this.hashService.hash(body.password);
     await this.passwordRepoService.changePassword(id, hashedPassword);

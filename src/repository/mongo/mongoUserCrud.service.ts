@@ -4,7 +4,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { UserDocument } from './user.schema';
 import { SafeUserDto } from 'src/dtos/safe-user.dto';
-import { Provider } from 'src/utils/interfaces';
+import { Provider, Role } from 'src/utils/interfaces';
 
 @Injectable()
 export class MongoUserCrudService implements IUserCrud {
@@ -24,10 +24,10 @@ export class MongoUserCrudService implements IUserCrud {
 
   async getUsers(n: number, i: number) {
     return await this.userModel
-      .find({}, 'email') // wybierz tylko pole "email"
-      .skip(n * i) // pomiń n*i dokumentów
-      .limit(n) // pobierz n dokumentów
-      .lean(); // zwróć czyste obiekty JS (bez narzutu Mongoose)
+      .find({}, 'email') // take only field"email"
+      .skip(n * i) // skip n*i documents
+      .limit(n) // take n documents
+      .lean(); // return pure JS objects
   }
 
   async insertOne({
@@ -132,5 +132,10 @@ export class MongoUserCrudService implements IUserCrud {
         },
       },
     );
+  }
+
+  async getUserRoles(id: string): Promise<Role[]> {
+    const user = await this.userModel.findOne({ _id: id }, 'roles');
+    return user?.roles || [];
   }
 }
