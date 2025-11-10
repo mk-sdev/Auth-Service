@@ -9,7 +9,7 @@ import { plainToInstance } from 'class-transformer';
 import { validateSync } from 'class-validator';
 import { AuditLoggerService } from '../utils/audit/audit.service';
 
-describe('MailController (integration)', () => {
+describe('TokenController', () => {
   let controller: TokenController;
 
   beforeEach(async () => {
@@ -72,7 +72,7 @@ describe('MailController (integration)', () => {
     });
   });
 
-  describe('ValidationPipe for LoginDto', () => {
+  describe('ValidationPipe for ChangeEmailDto', () => {
     const validationPipe = new ValidationPipe({
       whitelist: true,
       forbidNonWhitelisted: true,
