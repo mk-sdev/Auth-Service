@@ -186,11 +186,15 @@ export class CoreService {
       const refreshPayload: JwtPayload =
         await this.refreshTokenService.verifyAsync(refresh_token);
       const user = await this.userCrudRepoService.findOne(refreshPayload.sub);
+      const tokens = await this.tokenRepoService.getAllTokens(
+        refreshPayload.sub,
+      );
 
       if (!user) throw new UnauthorizedException('Invalid refresh token');
 
       const newPayload: NewPayload = {
         sub: user._id as string,
+        //FIXME: create getUserRoles method
         roles: extractRoles(user.roles ?? ['USER']),
       };
 
@@ -204,16 +208,16 @@ export class CoreService {
 
       let validTokenFound = false;
 
-      for (const hashedToken of user.refreshTokens) {
+      for (const hashedToken of tokens) {
         const isMatch = await this.hashService.verify(
-          typeof hashedToken === 'object' ? hashedToken.token : hashedToken,
+          hashedToken,
           refresh_token,
         );
         if (isMatch) {
           validTokenFound = true;
           await this.tokenRepoService.replaceRefreshToken(
             user._id as string,
-            typeof hashedToken === 'object' ? hashedToken.token : hashedToken,
+            hashedToken,
             newHashedRefreshToken,
           );
           break;
