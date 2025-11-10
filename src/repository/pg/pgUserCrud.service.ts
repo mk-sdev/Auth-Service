@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { SafeUserDto } from 'src/dtos/safe-user.dto';
-import { Provider, Role } from 'src/utils/interfaces';
+import { Provider, Role } from '../../utils/interfaces';
 import { Repository } from 'typeorm';
 import { IUserCrud } from '../interfaces/iUserCrud';
 import { UserRole } from './user-role.entity';

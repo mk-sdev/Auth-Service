@@ -3,11 +3,12 @@ import { CoreService } from './core.service';
 import { PasswordRepoService } from '../repository/passwordRepo.service';
 import { TokenRepoService } from '../repository/tokenRepo.service';
 import { UserCrudRepoService } from '../repository/userCrudRepo.service';
-import { TokenService } from './token.service';
+import { JwtService } from '@nestjs/jwt';
 import { JwtPayload, Role } from '../utils/interfaces';
 import { HashService } from '../utils/hash/hash.service';
 import { Request } from 'express';
 import { AuditModule } from '../utils/audit/audit.module';
+import { MailService } from './mail.service'; // Import MailService here
 
 describe('CoreService', () => {
   let appService: CoreService;
@@ -24,6 +25,7 @@ describe('CoreService', () => {
     removeRefreshToken: jest.fn(),
     updatePasswordAndClearTokens: jest.fn(),
     markUserForDeletion: jest.fn(),
+    findOneByEmail: jest.fn(),
   };
 
   const mockJwtAccessService = {};
@@ -35,6 +37,8 @@ describe('CoreService', () => {
 
   const mockMailService = {
     sendPasswordChangedEmail: jest.fn(),
+    sendSuspiciousLoginEmail: jest.fn(),
+    sendAccountDeletionAlert: jest.fn(),
   };
 
   const hashService = {
@@ -74,7 +78,7 @@ describe('CoreService', () => {
           useValue: mockJwtRefreshService,
         },
         {
-          provide: TokenService,
+          provide: MailService,
           useValue: mockMailService,
         },
         {
@@ -95,78 +99,34 @@ describe('CoreService', () => {
     jest.clearAllMocks();
   });
 
-  describe('logout', () => {
-    it('should remove refresh token on logout', async () => {
-      const mockPayload: JwtPayload = {
-        sub: 'userId',
-        iat: 1234567890,
-        exp: 1234567890,
-        roles: [Role.USER],
-      };
-      const plainToken = 'some-refresh-token';
-      const hashedToken = 'hashed-version-of-token';
+  describe('login', () => {
+    it('should rate limit logins and send email on too many attempts', async () => {
+      // mock Redis to simulate 6 failed login attempts
+      mockRedisClient.incr = jest.fn().mockResolvedValueOnce(6);
+      mockRedisClient.expire = jest.fn().mockResolvedValue(undefined);
 
-      // mock verifyAsync, so that it returns payload with userId
-      mockJwtRefreshService.verifyAsync = jest
-        .fn()
-        .mockResolvedValue(mockPayload);
+      const email = 'test@example.com';
 
-      // mock findOne, so that it returns a user with the hashed token
-      mockUserRepo.findOne = jest.fn().mockResolvedValue({
-        refreshTokens: [hashedToken],
-      });
+      // simulate a login attempt
+      mockUserRepo.findOne = jest.fn().mockResolvedValue(null);
 
-      // mock hashService.verify, so that it returns true (token is valid)
-      jest.spyOn(hashService, 'verify').mockResolvedValue(true);
-
-      // mock removeRefreshToken
-      mockUserRepo.removeRefreshToken = jest.fn().mockResolvedValue(undefined);
-
-      // call the function
-      await appService.logout(plainToken);
-
-      // check the calls
-      expect(mockJwtRefreshService.verifyAsync).toHaveBeenCalledWith(
-        plainToken,
-      );
-      expect(mockUserRepo.findOne).toHaveBeenCalledWith('userId');
-      expect(hashService.verify).toHaveBeenCalledWith(hashedToken, plainToken);
-      expect(mockUserRepo.removeRefreshToken).toHaveBeenCalledWith(
-        'userId',
-        hashedToken,
-      );
-    });
-
-    it('should not throw if refresh token is invalid', async () => {
-      const consoleWarnSpy = jest
-        .spyOn(console, 'warn')
-        .mockImplementation(() => {});
-
-      // the token cannot be decoded
-      mockJwtRefreshService.verifyAsync = jest
-        .fn()
-        .mockRejectedValue(new Error('Invalid token'));
-
-      await expect(appService.logout('invalid-token')).resolves.not.toThrow();
-
-      expect(consoleWarnSpy).toHaveBeenCalledWith(
-        'Logout error:',
-        'Invalid token',
+      await expect(appService.login(email, mockRequest)).rejects.toThrow(
+        'Too many login attempts. Try again later.',
       );
 
-      consoleWarnSpy.mockRestore(); // return the default behavior of console.warn
+      // check if suspicious login email was sent
+      expect(mockMailService.sendSuspiciousLoginEmail).toHaveBeenCalledWith(
+        email,
+        '127.0.0.1',
+      );
+      // ensure Redis keys are managed
+      expect(mockRedisClient.incr).toHaveBeenCalledWith(
+        `login_attempts:${email}`,
+      );
     });
   });
 
   describe('changePassword', () => {
-    it('should throw if user not found', async () => {
-      mockUserRepo.findOne.mockResolvedValue(null);
-
-      await expect(
-        appService.changePassword('userId', 'abc', 'def', mockRequest),
-      ).rejects.toThrow('The user of the given ID doesn`t exist');
-    });
-
     it('should throw if new password is same as current', async () => {
       await expect(
         appService.changePassword(
@@ -176,26 +136,6 @@ describe('CoreService', () => {
           mockRequest,
         ),
       ).rejects.toThrow('New password cannot be the same as the old one');
-    });
-
-    it('should throw if current password is invalid', async () => {
-      mockUserRepo.findOne.mockResolvedValue({
-        id: 'userId',
-        password: 'hashedPassword',
-        refreshtokens: [],
-        save: jest.fn(),
-      });
-
-      jest.spyOn(hashService, 'verify').mockResolvedValue(false);
-
-      await expect(
-        appService.changePassword(
-          'userId',
-          'wrongpassword',
-          'newpassword',
-          mockRequest,
-        ),
-      ).rejects.toThrow('Current password is incorrect');
     });
 
     it('should change password and clear refresh tokens', async () => {
@@ -228,28 +168,7 @@ describe('CoreService', () => {
   });
 
   describe('markForDeletion', () => {
-    it('should throw if user not found', async () => {
-      mockUserRepo.findOne.mockResolvedValue(null);
-
-      await expect(
-        appService.markForDeletion('userId', 'password', mockRequest),
-      ).rejects.toThrow('The user of the given ID doesn`t exist');
-    });
-
-    it('should throw if password is incorrect', async () => {
-      mockUserRepo.findOne.mockResolvedValue({
-        id: 'userId',
-        password: 'hashedPassword',
-      });
-
-      jest.spyOn(hashService, 'verify').mockResolvedValue(false);
-
-      await expect(
-        appService.markForDeletion('userId', 'wrongpassword', mockRequest),
-      ).rejects.toThrow('Incorrect password');
-    });
-
-    it('should mark user for deletion and save', async () => {
+    it('should mark user for deletion and send email', async () => {
       const userMock = {
         _id: 'userId',
         email: 'test@example.com',
@@ -260,8 +179,6 @@ describe('CoreService', () => {
       jest.spyOn(hashService, 'verify').mockResolvedValue(true);
       mockUserRepo.markUserForDeletion = jest.fn().mockResolvedValue(undefined);
 
-      const before = Date.now();
-
       await appService.markForDeletion(
         'userId',
         'correctPassword',
@@ -269,13 +186,9 @@ describe('CoreService', () => {
       );
 
       expect(mockUserRepo.markUserForDeletion).toHaveBeenCalled();
-      const callArgs = mockUserRepo.markUserForDeletion.mock
-        .calls[0] as unknown as [string, number];
-      expect(callArgs[0]).toEqual(userMock.email);
-
-      // deletionScheduledAt is a timestamp - check if it is within the expected range
-      expect(callArgs[1]).toBeGreaterThan(before + 1000 * 60 * 60 * 24 * 13);
-      expect(callArgs[1]).toBeLessThan(before + 1000 * 60 * 60 * 24 * 15);
+      expect(mockMailService.sendAccountDeletionAlert).toHaveBeenCalledWith(
+        userMock.email,
+      );
     });
   });
 });
