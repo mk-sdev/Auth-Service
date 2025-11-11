@@ -8,7 +8,7 @@ import { RefreshToken } from '../repository/pg/refresh-token.entity';
 import { JwtModule, JwtService } from '@nestjs/jwt';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Provider, Role } from '../utils/interfaces';
+import { JwtPayload, Provider, Role } from '../utils/interfaces';
 import { AuditLoggerService } from '../utils/audit/audit.service';
 import { MailService } from './mail.service';
 import { PasswordRepoService } from '../repository/passwordRepo.service';
@@ -20,11 +20,13 @@ import { PgTokenService } from '../repository/pg/pgToken.service';
 import { MongoTokenService } from '../repository/mongo/mongoToken.service';
 import { Request } from 'express';
 import { TokensModule } from '../utils/tokens.module';
+import { TokenService } from './token.service';
 process.env.JWT_ACCESS_SECRET = 'test_access_secret';
 process.env.JWT_REFRESH_SECRET = 'test_refresh_secret';
 
 describe('CoreService - Integration (real DB)', () => {
   let coreService: CoreService;
+  // let tokenService: TokenService;
   let userRepo: Repository<User>;
   let roleRepo: Repository<UserRole>;
   let refreshTokenRepo: Repository<RefreshToken>;
@@ -53,6 +55,7 @@ describe('CoreService - Integration (real DB)', () => {
       ],
       providers: [
         CoreService,
+        // TokenService,
         HashService,
         UserCrudRepoService,
         TokenRepoService,
@@ -95,6 +98,7 @@ describe('CoreService - Integration (real DB)', () => {
     }).compile();
 
     coreService = module.get(CoreService);
+    // tokenService = module.get(TokenService);
     userRepo = module.get<Repository<User>>(getRepositoryToken(User));
     roleRepo = module.get<Repository<UserRole>>(getRepositoryToken(UserRole));
     refreshTokenRepo = module.get<Repository<RefreshToken>>(
@@ -125,7 +129,7 @@ describe('CoreService - Integration (real DB)', () => {
     await roleRepo.save(role);
   });
 
-  it('should add a refresh token for a user', async () => {
+  test('[login] should add a refresh token for a user', async () => {
     const user = await userRepo.findOne({
       where: { email: 'user1@example.com' },
     });
@@ -137,7 +141,16 @@ describe('CoreService - Integration (real DB)', () => {
       method: 'POST',
     } as unknown as Request;
 
-    await coreService.login(user!.email, mockRequest, 'zaq1@WSX');
+    const jwts = await coreService.login(user!.email, mockRequest, 'zaq1@WSX');
+
+    expect(jwts.access_token).toBeDefined();
+    expect(jwts.refresh_token).toBeDefined();
+
+    const refreshTokenService = module.get<JwtService>('JWT_REFRESH_SERVICE');
+    const payload: JwtPayload = await refreshTokenService.verifyAsync(
+      jwts.refresh_token,
+    );
+    expect(payload.sub).toBe(user!._id);
 
     const tokens = await refreshTokenRepo.find({
       where: { userId: user!._id },
@@ -147,7 +160,7 @@ describe('CoreService - Integration (real DB)', () => {
     expect(tokens[0].token.startsWith('$argon2id$')).toBe(true);
   });
 
-  it('should replace the oldest token if user has 5 tokens', async () => {
+  test('[login] should replace the oldest token if user has 5 tokens', async () => {
     const user = await userRepo.findOne({
       where: { email: 'user1@example.com' },
     });
@@ -186,7 +199,7 @@ describe('CoreService - Integration (real DB)', () => {
     expect(hasArgon2).toBe(true);
   });
 
-  it('should remove the specific refresh token on logout', async () => {
+  test('[logout] should remove the specific refresh token on logout', async () => {
     // find the test user
     const user = await userRepo.findOne({
       where: { email: 'user1@example.com' },
@@ -241,7 +254,7 @@ describe('CoreService - Integration (real DB)', () => {
     expect(tokensInDb.length).toBe(1);
   });
 
-  it('should remove all refresh tokens on global logout', async () => {
+  test('[globalLogout] should remove all refresh tokens on global logout', async () => {
     // find the test user
     const user = await userRepo.findOne({
       where: { email: 'user1@example.com' },
@@ -291,7 +304,7 @@ describe('CoreService - Integration (real DB)', () => {
     expect(tokensInDb.length).toBe(0);
   });
 
-  it('should exchange refresh tokens on refresh', async () => {
+  it('[refresh] should exchange refresh tokens on refresh', async () => {
     // find the test user
     const user = await userRepo.findOne({
       where: { email: 'user1@example.com' },
@@ -332,8 +345,17 @@ describe('CoreService - Integration (real DB)', () => {
     });
     expect(tokensInDb.length).toBe(2);
 
-    // perform global logout
-    await coreService.refreshTokens(refreshTokenPlain2);
+    // perform refreshing tokens
+    const jwts = await coreService.refreshTokens(refreshTokenPlain2);
+
+    // check the validity of returned tokens
+    expect(jwts.access_token).toBeDefined();
+    expect(jwts.refresh_token).toBeDefined();
+
+    const refreshPayload: JwtPayload = await refreshTokenService.verifyAsync(
+      jwts.refresh_token,
+    );
+    expect(refreshPayload.sub).toBe(user!._id);
 
     // check if the token has been removed
     tokensInDb = await refreshTokenRepo.find({
@@ -355,4 +377,39 @@ describe('CoreService - Integration (real DB)', () => {
     );
     expect(untouchedToken).toBe(true);
   });
+
+  // it('should create a new unverified user, assign USER role, and not create any refresh tokens', async () => {
+  //   const email = 'newuser@example.com';
+  //   const password = 'SecureP@ssw0rd';
+
+  //   // wywołanie funkcji rejestracji
+  //   await tokenService.register(email, password);
+
+  //   // sprawdzenie czy użytkownik został dodany
+  //   const createdUser = await userRepo.findOne({ where: { email } });
+  //   expect(createdUser).toBeDefined();
+  //   expect(createdUser!._id).toBeDefined();
+  //   expect(createdUser!.email).toBe(email);
+  //   expect(createdUser!.isVerified).toBe(false);
+
+  //   // sprawdzenie hasła
+  //   const passwordMatches = await hashService.verify(
+  //     createdUser!.password as string,
+  //     password,
+  //   );
+  //   expect(passwordMatches).toBe(true);
+
+  //   // sprawdzenie roli
+  //   const role = await roleRepo.findOne({
+  //     where: { userId: createdUser!._id },
+  //   });
+  //   expect(role).toBeDefined();
+  //   expect(role!.role).toBe(Role.USER);
+
+  //   // sprawdzenie tokenów – nie powinno być żadnego refresh tokena
+  //   const tokens = await refreshTokenRepo.find({
+  //     where: { userId: createdUser!._id },
+  //   });
+  //   expect(tokens.length).toBe(0);
+  // });
 });
