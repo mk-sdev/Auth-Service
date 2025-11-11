@@ -192,25 +192,26 @@ describe('CoreService - Integration (real DB)', () => {
       where: { email: 'user1@example.com' },
     });
 
-    // generate a real JWT refresh token
+    // generate a real JWT refresh tokens
     const refreshTokenService = module.get<JwtService>('JWT_REFRESH_SERVICE');
-    const refreshTokenPlain = await refreshTokenService.signAsync({
+    const refreshTokenPlain1 = await refreshTokenService.signAsync({
       sub: user!._id,
+      iat: Date.now(),
     });
     const refreshTokenPlain2 = await refreshTokenService.signAsync({
       sub: user!._id,
-      dummyField: 'xx', // without it the two tokens are the same
+      iat: Date.now() + 1,
     });
 
-    // hash the token
-    const hashedToken = await hashService.hash(refreshTokenPlain);
+    // hash the tokens
+    const hashedToken1 = await hashService.hash(refreshTokenPlain1);
     const hashedToken2 = await hashService.hash(refreshTokenPlain2);
 
-    // save it in the db
+    // save them in the db
     await refreshTokenRepo.save(
       refreshTokenRepo.create({
         userId: user!._id,
-        token: hashedToken,
+        token: hashedToken1,
       }),
     );
     await refreshTokenRepo.save(
@@ -220,14 +221,14 @@ describe('CoreService - Integration (real DB)', () => {
       }),
     );
 
-    // check if it exists in db
+    // check if they exist in  the db
     let tokensInDb = await refreshTokenRepo.find({
       where: { userId: user!._id },
     });
     expect(tokensInDb.length).toBe(2);
 
     // perform logout
-    await coreService.logout(refreshTokenPlain);
+    await coreService.logout(refreshTokenPlain1);
 
     // check if the token has been removed
     tokensInDb = await refreshTokenRepo.find({ where: { userId: user!._id } });
@@ -238,5 +239,55 @@ describe('CoreService - Integration (real DB)', () => {
     );
     expect(remaining).toBe(true);
     expect(tokensInDb.length).toBe(1);
+  });
+
+  it('should remove all refresh tokens on global logout', async () => {
+    // find the test user
+    const user = await userRepo.findOne({
+      where: { email: 'user1@example.com' },
+    });
+
+    // generate a real JWT refresh tokens
+    const refreshTokenService = module.get<JwtService>('JWT_REFRESH_SERVICE');
+    const refreshTokenPlain1 = await refreshTokenService.signAsync({
+      sub: user!._id,
+      iat: Date.now(),
+    });
+    const refreshTokenPlain2 = await refreshTokenService.signAsync({
+      sub: user!._id,
+      iat: Date.now() + 1,
+    });
+
+    // hash the tokens
+    const hashedToken1 = await hashService.hash(refreshTokenPlain1);
+    const hashedToken2 = await hashService.hash(refreshTokenPlain2);
+
+    // save them in the db
+    await refreshTokenRepo.save(
+      refreshTokenRepo.create({
+        userId: user!._id,
+        token: hashedToken1,
+      }),
+    );
+    await refreshTokenRepo.save(
+      refreshTokenRepo.create({
+        userId: user!._id,
+        token: hashedToken2,
+      }),
+    );
+
+    // check if they exist in  the db
+    let tokensInDb = await refreshTokenRepo.find({
+      where: { userId: user!._id },
+    });
+    expect(tokensInDb.length).toBe(2);
+
+    // perform global logout
+    await coreService.globalLogout(user!._id);
+
+    // check if the token has been removed
+    tokensInDb = await refreshTokenRepo.find({ where: { userId: user!._id } });
+
+    expect(tokensInDb.length).toBe(0);
   });
 });
