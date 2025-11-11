@@ -5,7 +5,7 @@ import { HashService } from '../utils/hash/hash.service';
 import { User } from '../repository/pg/user.entity';
 import { UserRole } from '../repository/pg/user-role.entity';
 import { RefreshToken } from '../repository/pg/refresh-token.entity';
-import { JwtModule } from '@nestjs/jwt';
+import { JwtModule, JwtService } from '@nestjs/jwt';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Provider, Role } from '../utils/interfaces';
@@ -19,6 +19,9 @@ import { PgUserCrudService } from '../repository/pg/pgUserCrud.service';
 import { PgTokenService } from '../repository/pg/pgToken.service';
 import { MongoTokenService } from '../repository/mongo/mongoToken.service';
 import { Request } from 'express';
+import { TokensModule } from '../utils/tokens.module';
+process.env.JWT_ACCESS_SECRET = 'test_access_secret';
+process.env.JWT_REFRESH_SECRET = 'test_refresh_secret';
 
 describe('CoreService - Integration (real DB)', () => {
   let coreService: CoreService;
@@ -26,9 +29,10 @@ describe('CoreService - Integration (real DB)', () => {
   let roleRepo: Repository<UserRole>;
   let refreshTokenRepo: Repository<RefreshToken>;
   let hashService: HashService;
+  let module: TestingModule;
 
   beforeAll(async () => {
-    const module: TestingModule = await Test.createTestingModule({
+    module = await Test.createTestingModule({
       imports: [
         TypeOrmModule.forRoot({
           type: 'postgres',
@@ -45,6 +49,7 @@ describe('CoreService - Integration (real DB)', () => {
           secret: 'test',
           signOptions: { expiresIn: '1h' },
         }),
+        TokensModule,
       ],
       providers: [
         CoreService,
@@ -75,18 +80,6 @@ describe('CoreService - Integration (real DB)', () => {
           },
         },
         {
-          provide: 'JWT_ACCESS_SERVICE',
-          useValue: {
-            signAsync: jest.fn().mockResolvedValue('access_token_123'),
-          },
-        },
-        {
-          provide: 'JWT_REFRESH_SERVICE',
-          useValue: {
-            signAsync: jest.fn().mockResolvedValue('refresh_token_123'),
-          },
-        },
-        {
           provide: 'REDIS_CLIENT',
           useValue: { incr: jest.fn(), expire: jest.fn(), del: jest.fn() },
         },
@@ -108,6 +101,7 @@ describe('CoreService - Integration (real DB)', () => {
       getRepositoryToken(RefreshToken),
     );
     hashService = module.get(HashService);
+    //const refreshTokenService = module.get<JwtService>('JWT_REFRESH_SERVICE');
   });
 
   beforeEach(async () => {
@@ -190,5 +184,59 @@ describe('CoreService - Integration (real DB)', () => {
     // updated tokens should include a new hashed token
     const hasArgon2 = tokens.some((t) => t.token.startsWith('$argon2id$'));
     expect(hasArgon2).toBe(true);
+  });
+
+  it('should remove the specific refresh token on logout', async () => {
+    // find the test user
+    const user = await userRepo.findOne({
+      where: { email: 'user1@example.com' },
+    });
+
+    // generate a real JWT refresh token
+    const refreshTokenService = module.get<JwtService>('JWT_REFRESH_SERVICE');
+    const refreshTokenPlain = await refreshTokenService.signAsync({
+      sub: user!._id,
+    });
+    const refreshTokenPlain2 = await refreshTokenService.signAsync({
+      sub: user!._id,
+      dummyField: 'xx', // without it the two tokens are the same
+    });
+
+    // hash the token
+    const hashedToken = await hashService.hash(refreshTokenPlain);
+    const hashedToken2 = await hashService.hash(refreshTokenPlain2);
+
+    // save it in the db
+    await refreshTokenRepo.save(
+      refreshTokenRepo.create({
+        userId: user!._id,
+        token: hashedToken,
+      }),
+    );
+    await refreshTokenRepo.save(
+      refreshTokenRepo.create({
+        userId: user!._id,
+        token: hashedToken2,
+      }),
+    );
+
+    // check if it exists in db
+    let tokensInDb = await refreshTokenRepo.find({
+      where: { userId: user!._id },
+    });
+    expect(tokensInDb.length).toBe(2);
+
+    // perform logout
+    await coreService.logout(refreshTokenPlain);
+
+    // check if the token has been removed
+    tokensInDb = await refreshTokenRepo.find({ where: { userId: user!._id } });
+
+    const remaining = await hashService.verify(
+      tokensInDb[0].token,
+      refreshTokenPlain2,
+    );
+    expect(remaining).toBe(true);
+    expect(tokensInDb.length).toBe(1);
   });
 });
