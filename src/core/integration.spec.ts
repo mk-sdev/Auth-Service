@@ -21,12 +21,15 @@ import { MongoTokenService } from '../repository/mongo/mongoToken.service';
 import { Request } from 'express';
 import { TokensModule } from '../utils/tokens.module';
 import { TokenService } from './token.service';
+import { VerificationRepoService } from '../repository/verificationRepo.service';
+import { PgVerificationService } from '../repository/pg/pgVerification.service';
+import { MongoVerificationService } from '../repository/mongo/mongoVerification.service';
 process.env.JWT_ACCESS_SECRET = 'test_access_secret';
 process.env.JWT_REFRESH_SECRET = 'test_refresh_secret';
 
 describe('CoreService - Integration (real DB)', () => {
   let coreService: CoreService;
-  // let tokenService: TokenService;
+  let tokenService: TokenService;
   let userRepo: Repository<User>;
   let roleRepo: Repository<UserRole>;
   let refreshTokenRepo: Repository<RefreshToken>;
@@ -55,14 +58,21 @@ describe('CoreService - Integration (real DB)', () => {
       ],
       providers: [
         CoreService,
-        // TokenService,
+        TokenService,
         HashService,
-        UserCrudRepoService,
+        AuditLoggerService,
+
         TokenRepoService,
+        PasswordRepoService,
+        UserCrudRepoService,
+        VerificationRepoService,
+
         PgUserCrudService,
         MongoUserCrudService,
         PgTokenService,
         MongoTokenService,
+        PgVerificationService,
+        MongoVerificationService,
         {
           provide: 'PROM_METRIC_HASHING_DURATION_SECONDS',
           useValue: {
@@ -92,20 +102,22 @@ describe('CoreService - Integration (real DB)', () => {
         },
         {
           provide: MailService,
-          useValue: { sendSuspiciousLoginEmail: jest.fn() },
+          useValue: {
+            sendSuspiciousLoginEmail: jest.fn(),
+            sendMailWithToken: jest.fn(),
+          },
         },
       ],
     }).compile();
 
     coreService = module.get(CoreService);
-    // tokenService = module.get(TokenService);
+    tokenService = module.get(TokenService);
     userRepo = module.get<Repository<User>>(getRepositoryToken(User));
     roleRepo = module.get<Repository<UserRole>>(getRepositoryToken(UserRole));
     refreshTokenRepo = module.get<Repository<RefreshToken>>(
       getRepositoryToken(RefreshToken),
     );
     hashService = module.get(HashService);
-    //const refreshTokenService = module.get<JwtService>('JWT_REFRESH_SERVICE');
   });
 
   beforeEach(async () => {
@@ -378,38 +390,38 @@ describe('CoreService - Integration (real DB)', () => {
     expect(untouchedToken).toBe(true);
   });
 
-  // it('should create a new unverified user, assign USER role, and not create any refresh tokens', async () => {
-  //   const email = 'newuser@example.com';
-  //   const password = 'SecureP@ssw0rd';
+  test('[register] should create a new unverified user, assign USER role, and not create any refresh tokens', async () => {
+    const email = 'newuser@example.com';
+    const password = 'SecureP@ssw0rd';
 
-  //   // wywołanie funkcji rejestracji
-  //   await tokenService.register(email, password);
+    // perform register action
+    await tokenService.register(email, password);
 
-  //   // sprawdzenie czy użytkownik został dodany
-  //   const createdUser = await userRepo.findOne({ where: { email } });
-  //   expect(createdUser).toBeDefined();
-  //   expect(createdUser!._id).toBeDefined();
-  //   expect(createdUser!.email).toBe(email);
-  //   expect(createdUser!.isVerified).toBe(false);
+    // check id user has been added to the db
+    const createdUser = await userRepo.findOne({ where: { email } });
+    expect(createdUser).toBeDefined();
+    expect(createdUser!._id).toBeDefined();
+    expect(createdUser!.email).toBe(email);
+    expect(createdUser!.isVerified).toBe(false);
 
-  //   // sprawdzenie hasła
-  //   const passwordMatches = await hashService.verify(
-  //     createdUser!.password as string,
-  //     password,
-  //   );
-  //   expect(passwordMatches).toBe(true);
+    // checking the password
+    const passwordMatches = await hashService.verify(
+      createdUser!.password as string,
+      password,
+    );
+    expect(passwordMatches).toBe(true);
 
-  //   // sprawdzenie roli
-  //   const role = await roleRepo.findOne({
-  //     where: { userId: createdUser!._id },
-  //   });
-  //   expect(role).toBeDefined();
-  //   expect(role!.role).toBe(Role.USER);
+    // checking the roles
+    const role = await roleRepo.findOne({
+      where: { userId: createdUser!._id },
+    });
+    expect(role).toBeDefined();
+    expect(role!.role).toBe(Role.USER);
 
-  //   // sprawdzenie tokenów – nie powinno być żadnego refresh tokena
-  //   const tokens = await refreshTokenRepo.find({
-  //     where: { userId: createdUser!._id },
-  //   });
-  //   expect(tokens.length).toBe(0);
-  // });
+    // should not be any refresh tokens assigned to that user
+    const tokens = await refreshTokenRepo.find({
+      where: { userId: createdUser!._id },
+    });
+    expect(tokens.length).toBe(0);
+  });
 });
