@@ -290,4 +290,69 @@ describe('CoreService - Integration (real DB)', () => {
 
     expect(tokensInDb.length).toBe(0);
   });
+
+  it('should exchange refresh tokens on refresh', async () => {
+    // find the test user
+    const user = await userRepo.findOne({
+      where: { email: 'user1@example.com' },
+    });
+
+    // generate a real JWT refresh tokens
+    const refreshTokenService = module.get<JwtService>('JWT_REFRESH_SERVICE');
+    const refreshTokenPlain1 = await refreshTokenService.signAsync({
+      sub: user!._id,
+      iat: Date.now(),
+    });
+    const refreshTokenPlain2 = await refreshTokenService.signAsync({
+      sub: user!._id,
+      iat: Date.now() + 1,
+    });
+
+    // hash the tokens
+    const hashedToken1 = await hashService.hash(refreshTokenPlain1);
+    const hashedToken2 = await hashService.hash(refreshTokenPlain2);
+
+    // save them in the db
+    await refreshTokenRepo.save(
+      refreshTokenRepo.create({
+        userId: user!._id,
+        token: hashedToken1,
+      }),
+    );
+    await refreshTokenRepo.save(
+      refreshTokenRepo.create({
+        userId: user!._id,
+        token: hashedToken2,
+      }),
+    );
+
+    // check if they exist in  the db
+    let tokensInDb = await refreshTokenRepo.find({
+      where: { userId: user!._id },
+    });
+    expect(tokensInDb.length).toBe(2);
+
+    // perform global logout
+    await coreService.refreshTokens(refreshTokenPlain2);
+
+    // check if the token has been removed
+    tokensInDb = await refreshTokenRepo.find({
+      where: { userId: user!._id },
+    });
+    expect(tokensInDb.length).toBe(2);
+
+    // should replace the used token with a new one
+    const newToken = await hashService.verify(
+      tokensInDb[1].token,
+      refreshTokenPlain2,
+    );
+    expect(newToken).not.toBe(true);
+
+    // other tokens should stay in the db
+    const untouchedToken = await hashService.verify(
+      tokensInDb[0].token,
+      refreshTokenPlain1,
+    );
+    expect(untouchedToken).toBe(true);
+  });
 });
