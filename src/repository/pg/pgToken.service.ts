@@ -70,7 +70,7 @@ export class PgTokenService implements IToken {
   async trimRefreshTokens(userId: string, maxTokens: number): Promise<void> {
     const tokens = await this.refreshTokenRepository.find({
       where: { userId },
-      order: { token: 'DESC' },
+      //order: { token: 'DESC' },
     });
 
     if (tokens.length <= maxTokens) return;

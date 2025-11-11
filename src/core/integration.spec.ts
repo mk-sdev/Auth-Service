@@ -1,0 +1,194 @@
+import { Test, TestingModule } from '@nestjs/testing';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { CoreService } from './core.service';
+import { HashService } from '../utils/hash/hash.service';
+import { User } from '../repository/pg/user.entity';
+import { UserRole } from '../repository/pg/user-role.entity';
+import { RefreshToken } from '../repository/pg/refresh-token.entity';
+import { JwtModule } from '@nestjs/jwt';
+import { getRepositoryToken } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Provider, Role } from '../utils/interfaces';
+import { AuditLoggerService } from '../utils/audit/audit.service';
+import { MailService } from './mail.service';
+import { PasswordRepoService } from '../repository/passwordRepo.service';
+import { TokenRepoService } from '../repository/tokenRepo.service';
+import { UserCrudRepoService } from '../repository/userCrudRepo.service';
+import { MongoUserCrudService } from '../repository/mongo/mongoUserCrud.service';
+import { PgUserCrudService } from '../repository/pg/pgUserCrud.service';
+import { PgTokenService } from '../repository/pg/pgToken.service';
+import { MongoTokenService } from '../repository/mongo/mongoToken.service';
+import { Request } from 'express';
+
+describe('CoreService - Integration (real DB)', () => {
+  let coreService: CoreService;
+  let userRepo: Repository<User>;
+  let roleRepo: Repository<UserRole>;
+  let refreshTokenRepo: Repository<RefreshToken>;
+  let hashService: HashService;
+
+  beforeAll(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      imports: [
+        TypeOrmModule.forRoot({
+          type: 'postgres',
+          host: process.env.DB_HOST || 'localhost',
+          port: +process.env.DB_PORT! || 5433,
+          username: process.env.DB_USER || 'auth_user',
+          password: process.env.DB_PASSWORD || 'auth_password',
+          database: 'test_db',
+          entities: [User, UserRole, RefreshToken],
+          synchronize: true,
+        }),
+        TypeOrmModule.forFeature([User, UserRole, RefreshToken]),
+        JwtModule.register({
+          secret: 'test',
+          signOptions: { expiresIn: '1h' },
+        }),
+      ],
+      providers: [
+        CoreService,
+        HashService,
+        UserCrudRepoService,
+        TokenRepoService,
+        PgUserCrudService,
+        MongoUserCrudService,
+        PgTokenService,
+        MongoTokenService,
+        {
+          provide: 'PROM_METRIC_HASHING_DURATION_SECONDS',
+          useValue: {
+            startTimer: jest.fn(() => () => {}),
+          },
+        },
+        {
+          provide: PasswordRepoService,
+          useValue: {},
+        },
+        {
+          provide: 'UserModel',
+          useValue: {
+            findOne: jest.fn(),
+            find: jest.fn(),
+            create: jest.fn(),
+            save: jest.fn(),
+          },
+        },
+        {
+          provide: 'JWT_ACCESS_SERVICE',
+          useValue: {
+            signAsync: jest.fn().mockResolvedValue('access_token_123'),
+          },
+        },
+        {
+          provide: 'JWT_REFRESH_SERVICE',
+          useValue: {
+            signAsync: jest.fn().mockResolvedValue('refresh_token_123'),
+          },
+        },
+        {
+          provide: 'REDIS_CLIENT',
+          useValue: { incr: jest.fn(), expire: jest.fn(), del: jest.fn() },
+        },
+        {
+          provide: AuditLoggerService,
+          useValue: { warn: jest.fn() },
+        },
+        {
+          provide: MailService,
+          useValue: { sendSuspiciousLoginEmail: jest.fn() },
+        },
+      ],
+    }).compile();
+
+    coreService = module.get(CoreService);
+    userRepo = module.get<Repository<User>>(getRepositoryToken(User));
+    roleRepo = module.get<Repository<UserRole>>(getRepositoryToken(UserRole));
+    refreshTokenRepo = module.get<Repository<RefreshToken>>(
+      getRepositoryToken(RefreshToken),
+    );
+    hashService = module.get(HashService);
+  });
+
+  beforeEach(async () => {
+    await refreshTokenRepo.createQueryBuilder().delete().execute();
+    await roleRepo.createQueryBuilder().delete().execute();
+    await userRepo.createQueryBuilder().delete().execute();
+  });
+
+  beforeEach(async () => {
+    const passwordHash = await hashService.hash('zaq1@WSX');
+    const user = userRepo.create({
+      email: 'user1@example.com',
+      password: passwordHash,
+      isVerified: true,
+      provider: Provider.LOCAL,
+    });
+
+    const savedUser = await userRepo.save(user);
+
+    const role = roleRepo.create({ userId: savedUser._id, role: Role.USER });
+    await roleRepo.save(role);
+  });
+
+  it('should add a refresh token for a user', async () => {
+    const user = await userRepo.findOne({
+      where: { email: 'user1@example.com' },
+    });
+
+    const mockRequest = {
+      headers: {},
+      ip: '127.0.0.1',
+      path: '/login',
+      method: 'POST',
+    } as unknown as Request;
+
+    await coreService.login(user!.email, mockRequest, 'zaq1@WSX');
+
+    const tokens = await refreshTokenRepo.find({
+      where: { userId: user!._id },
+    });
+
+    expect(tokens.length).toBe(1);
+    expect(tokens[0].token.startsWith('$argon2id$')).toBe(true);
+  });
+
+  it('should replace the oldest token if user has 5 tokens', async () => {
+    const user = await userRepo.findOne({
+      where: { email: 'user1@example.com' },
+    });
+
+    // add 5 mock tokens
+    for (let i = 1; i <= 5; i++) {
+      const token = refreshTokenRepo.create({
+        userId: user!._id,
+        token: `old_token_${i}`,
+      });
+      await refreshTokenRepo.save(token);
+    }
+
+    const mockRequest = {
+      headers: {},
+      ip: '127.0.0.1',
+      path: '/login',
+      method: 'POST',
+    } as unknown as Request;
+
+    await coreService.login(user!.email, mockRequest, 'zaq1@WSX');
+
+    const tokens = await refreshTokenRepo.find({
+      where: { userId: user!._id },
+      order: { token: 'ASC' },
+    });
+
+    // still 5 tokens
+    expect(tokens.length).toBe(5);
+
+    // the oldest one should be deleted
+    expect(tokens.map((t) => t.token)).not.toContain('old_token_1');
+
+    // updated tokens should include a new hashed token
+    const hasArgon2 = tokens.some((t) => t.token.startsWith('$argon2id$'));
+    expect(hasArgon2).toBe(true);
+  });
+});

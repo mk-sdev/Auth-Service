@@ -32,7 +32,10 @@ import { RefreshToken } from './repository/pg/refresh-token.entity';
       port: +process.env.DB_PORT! || 5433,
       username: process.env.DB_USER || 'auth_user',
       password: process.env.DB_PASSWORD || 'auth_password',
-      database: process.env.DB_NAME || 'auth_db',
+      database:
+        process.env.NODE_ENV === 'test'
+          ? 'test_db'
+          : process.env.DB_NAME || 'auth_db',
       entities: [User, UserRole, RefreshToken],
       synchronize: true,
     }),
