@@ -1,18 +1,18 @@
 version: '3'
 
 services:
-  # app:
-  #   build: .
-  #   volumes:
-  #     - .:/app
-  #     - /app/node_modules
-  #   command: npm run start:dev
-  #   ports:
-  #     - '3000:3000'
-  #   depends_on:
-  #     - mongo
-  #     - redis
-  #     - postgres
+  app:
+    build: .
+    volumes:
+      - .:/app
+      - /app/node_modules
+    command: npm run start:dev
+    ports:
+      - '3000:3000'
+    depends_on:
+      - mongo
+      - redis
+      - postgres
 
   loki:
     image: grafana/loki:latest
@@ -74,20 +74,20 @@ services:
       POSTGRES_PASSWORD: auth_password
       POSTGRES_DB: auth_db
     ports:
-      - '5433:5432'
+      - '5432:5432'
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
-  # mongo:
-  #   image: mongo:6.0
-  #   restart: always
-  #   environment:
-  #     MONGO_INITDB_ROOT_USERNAME: root
-  #     MONGO_INITDB_ROOT_PASSWORD: examplepassword
-  #   ports:
-  #     - "27018:27017"
-  #   volumes:
-  #     - mongo-data:/data/db
+  mongo:
+    image: mongo:6.0
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: examplepassword
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
 
 volumes:
   mongo-data:

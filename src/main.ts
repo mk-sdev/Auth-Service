@@ -10,6 +10,7 @@ async function bootstrap() {
       'http://localhost:8081',
       'http://192.168.1.30:8081',
       'http://localhost:4200',
+      'http://localhost:4201',
     ],
     credentials: true,
     exposedHeaders: ['Authorization'], // so that I could send headers to a browser
