@@ -3,29 +3,25 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtModule } from '@nestjs/jwt';
-import { MongooseModule } from '@nestjs/mongoose';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { CoreModule } from './core/core.module';
-import { ProtectedModule } from './protected/protected.module';
-import { RepositoryModule } from './repository/repository.module';
-import { RedisModule } from './utils/redis.module';
-import { TokensModule } from './utils/tokens.module';
 import { OAuthModule } from './oauth/oauth.module';
+import { ProtectedModule } from './protected/protected.module';
+import { RefreshToken } from './repository/entities/refresh-token.entity';
+import { UserRole } from './repository/entities/user-role.entity';
+import { User } from './repository/entities/user.entity';
+import { RepositoryModule } from './repository/repository.module';
 import { AuditModule } from './utils/audit/audit.module';
 import { HashModule } from './utils/hash/hash.module';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { User } from './repository/pg/user.entity';
-import { UserRole } from './repository/pg/user-role.entity';
-import { RefreshToken } from './repository/pg/refresh-token.entity';
+import { RedisModule } from './utils/redis.module';
+import { TokensModule } from './utils/tokens.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true, // lets use process.env in the whole app
     }),
-    MongooseModule.forRoot(
-      process.env.MONGO_URI || 'mongodb://mongo:27017/imagehub',
-    ),
     TypeOrmModule.forRoot({
       type: 'postgres',
       host: process.env.DB_HOST || 'postgres',
@@ -78,4 +74,4 @@ import { RefreshToken } from './repository/pg/refresh-token.entity';
     },
   ],
 })
-export class AppModule {}
+export class AppModule { }

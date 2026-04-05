@@ -1,46 +1,85 @@
 import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { IToken } from './interfaces/iToken';
-import { MongoTokenService } from './mongo/mongoToken.service';
-import { PgTokenService } from './pg/pgToken.service';
+import { RefreshToken } from './entities/refresh-token.entity';
+import { User } from './entities/user.entity';
 
 @Injectable()
 export class TokenRepoService implements IToken {
-  private repoService: IToken;
-
   constructor(
-    private readonly mongoService: MongoTokenService,
-    private readonly pgService: PgTokenService,
-  ) {
-    if (process.env.DB_TYPE === 'mongo') {
-      this.repoService = this.mongoService;
-    } else this.repoService = this.pgService;
-  }
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
+
+    @InjectRepository(RefreshToken)
+    private readonly refreshTokenRepository: Repository<RefreshToken>,
+  ) {}
 
   async getAllTokens(userId: string): Promise<string[]> {
-    return await this.repoService.getAllTokens(userId);
+    const tokens = await this.refreshTokenRepository.find({
+      where: { userId },
+      select: ['token'],
+    });
+    return tokens.map((t) => t.token);
   }
 
-  async addRefreshToken(id: string, token: string): Promise<void> {
-    await this.repoService.addRefreshToken(id, token);
+  async addRefreshToken(_id: string, token: string): Promise<void> {
+    const user = await this.userRepository.findOne({ where: { _id } });
+    if (!user) return;
+
+    const refreshToken = this.refreshTokenRepository.create({
+      token,
+      userId: user._id,
+    });
+    await this.refreshTokenRepository.save(refreshToken);
   }
 
   async replaceRefreshToken(
-    id: string,
+    _id: string,
     oldToken: string,
     newToken: string,
   ): Promise<void> {
-    await this.repoService.replaceRefreshToken(id, oldToken, newToken);
+    const old = await this.refreshTokenRepository.findOne({
+      where: { token: oldToken, userId: _id },
+      relations: ['user'],
+    });
+
+    if (old) {
+      // token update
+      await this.refreshTokenRepository.remove(old);
+    }
+
+    // add new token
+    const user = await this.userRepository.findOne({ where: { _id } });
+    if (!user) return;
+
+    const newRefreshToken = this.refreshTokenRepository.create({
+      token: newToken,
+      userId: user._id,
+    });
+    await this.refreshTokenRepository.save(newRefreshToken);
   }
 
   async removeRefreshToken(userId: string, token: string): Promise<void> {
-    await this.repoService.removeRefreshToken(userId, token);
+    await this.refreshTokenRepository.delete({
+      token,
+      userId: userId,
+    });
   }
 
-  async trimRefreshTokens(userId: string): Promise<void> {
-    await this.repoService.trimRefreshTokens(userId, 5);
+  async trimRefreshTokens(userId: string, maxTokens: number = 5): Promise<void> {
+    const tokens = await this.refreshTokenRepository.find({
+      where: { userId },
+      //order: { token: 'DESC' },
+    });
+
+    if (tokens.length <= maxTokens) return;
+
+    const tokensToRemove = tokens.slice(0, tokens.length - maxTokens);
+    await this.refreshTokenRepository.remove(tokensToRemove);
   }
 
-  async clearTokens(id: string) {
-    await this.repoService.clearTokens(id);
+  async clearTokens(_id: string): Promise<void> {
+    await this.refreshTokenRepository.delete({ userId: _id });
   }
 }

@@ -34,7 +34,7 @@ export class CoreService {
     @Inject('REDIS_CLIENT') private readonly redis: Redis,
     private readonly auditLogger: AuditLoggerService,
     private readonly mailService: MailService,
-  ) {}
+  ) { }
 
   async login(
     email: string,
@@ -116,8 +116,8 @@ export class CoreService {
 
     //* if the user is found and the password matches, generate a JWT token and send it back
     const payload: NewPayload = {
-      sub: user._id as string,
-      roles: user.roles as Role[],
+      sub: user._id,
+      roles: user.roles.map(r => r.role), // ✅ mapujemy obiekty UserRole do enum Role
     };
     const access_token = await this.accessTokenService.signAsync(payload);
     const refresh_token = await this.refreshTokenService.signAsync(payload);

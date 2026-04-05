@@ -10,7 +10,6 @@ services:
     ports:
       - '3000:3000'
     depends_on:
-      - mongo
       - redis
       - postgres
 
@@ -78,18 +77,6 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
-  mongo:
-    image: mongo:6.0
-    restart: always
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: root
-      MONGO_INITDB_ROOT_PASSWORD: examplepassword
-    ports:
-      - "27017:27017"
-    volumes:
-      - mongo-data:/data/db
-
 volumes:
-  mongo-data:
   postgres_data:
   grafana-storage:

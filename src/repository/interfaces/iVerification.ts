@@ -1,5 +1,4 @@
-import { UserDocument } from '../mongo/user.schema';
-import { User } from '../pg/user.entity';
+import { User } from '../entities/user.entity';
 
 export interface IVerification {
   setNewVerificationToken(
@@ -16,9 +15,9 @@ export interface IVerification {
   ): Promise<void>;
   findOneByVerificationToken(
     token: string,
-  ): Promise<UserDocument | User | null>;
-  findOneByEmailToken(token: string): Promise<UserDocument | User | null>;
+  ): Promise<User | null>;
+  findOneByEmailToken(token: string): Promise<User | null>;
   findOneByPasswordResetToken(
     token: string,
-  ): Promise<UserDocument | User | null>;
+  ): Promise<User | null>;
 }

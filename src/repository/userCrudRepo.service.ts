@@ -1,42 +1,39 @@
-import { Injectable } from '@nestjs/common';
-import { IUserCrud } from './interfaces/iUserCrud';
-import { MongoUserCrudService } from './mongo/mongoUserCrud.service';
-import { SafeUserDto } from '../dtos/safe-user.dto';
-import { UserDocument } from './mongo/user.schema';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { SafeUserDto } from 'src/dtos/safe-user.dto';
 import { Provider, Role } from '../utils/interfaces';
-import { PgUserCrudService } from './pg/pgUserCrud.service';
-import { User } from './pg/user.entity';
+import { Repository } from 'typeorm';
+import { IUserCrud } from './interfaces/iUserCrud';
+import { UserRole } from './entities/user-role.entity';
+import { User } from './entities/user.entity';
 
 @Injectable()
 export class UserCrudRepoService implements IUserCrud {
-  private readonly repoService: IUserCrud;
-
   constructor(
-    private readonly mongoService: MongoUserCrudService,
-    private readonly pgService: PgUserCrudService,
-  ) {
-    if (process.env.DB_TYPE === 'mongo') {
-      this.repoService = this.mongoService;
-    } else this.repoService = this.pgService;
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
+    @InjectRepository(UserRole)
+    private readonly roleRepository: Repository<UserRole>,
+  ) { }
+
+  async findOne(_id: string): Promise<User | null> {
+    return await this.userRepository.findOne({ where: { _id } });
   }
 
-  async findOne(id: string): Promise<UserDocument | User | null> {
-    return this.repoService.findOne(id);
+  async findOneByEmail(email: string): Promise<User | null> {
+    return await this.userRepository.findOne({ where: { email }, relations: ['roles'] });
   }
 
-  async findOneByEmail(email: string): Promise<UserDocument | User | null> {
-    return this.repoService.findOneByEmail(email);
+  async getAllUsers(): Promise<Pick<User, 'email'>[]> {
+    return await this.userRepository.find({ select: ['email'] });
   }
 
-  async getAllUsers(): Promise<UserDocument[] | Pick<User, 'email'>[] | null> {
-    return await this.repoService.getAllUsers();
-  }
-
-  async getUsers(
-    n: number,
-    i: number,
-  ): Promise<UserDocument[] | Pick<User, 'email'>[] | null> {
-    return await this.repoService.getUsers(n, i);
+  async getUsers(n: number, i: number): Promise<Pick<User, 'email'>[]> {
+    return await this.userRepository.find({
+      select: ['email'],
+      skip: n * i, // skip n*i records
+      take: n, // take n records
+    });
   }
 
   async insertOne({
@@ -49,49 +46,121 @@ export class UserCrudRepoService implements IUserCrud {
     password: string;
     verificationToken: string;
     verificationTokenExpires: number;
-  }): Promise<UserDocument | User> {
-    return this.repoService.insertOne({
+  }): Promise<User> {
+    const user = this.userRepository.create({
       email,
       password,
       verificationToken,
       verificationTokenExpires,
+      roles: [
+        {
+          role: Role.USER,
+        },
+      ],
     });
+
+    return await this.userRepository.save(user);
   }
 
-  async insertOne_OAuth(
-    email: string,
-    provider: Provider,
-  ): Promise<UserDocument | User> {
-    return await this.repoService.insertOne_OAuth(email, provider);
+  async insertOne_OAuth(email: string, provider: Provider): Promise<User> {
+    const user = this.userRepository.create({
+      email,
+      provider,
+      isVerified: true,
+      roles: [{ role: Role.USER }],
+    });
+
+    return await this.userRepository.save(user);
   }
 
   async moderateUser(
     _id: string,
-    data: Omit<SafeUserDto, '_id'>,
+    { email, roles, isVerified }: Omit<SafeUserDto, '_id'>,
   ): Promise<void> {
-    await this.repoService.moderateUser(_id, data);
+    const user = await this.userRepository.findOne({
+      where: { _id },
+      relations: ['roles'],
+    });
+
+    if (!user) return;
+
+    user.email = email;
+    user.isVerified = isVerified;
+
+    // remove old roles
+    await this.roleRepository.remove(user.roles);
+
+    // add new roles
+    user.roles = await Promise.all(
+      // eslint-disable-next-line @typescript-eslint/require-await
+      roles.map(async (role) => {
+        const userRole = this.userRepository.manager.create(UserRole, {
+          role,
+          user, // assign user to correctly set up user_id
+        });
+        return userRole;
+      }),
+    );
+
+    await this.userRepository.save(user);
   }
 
-  async verifyAccount(id: string): Promise<void> {
-    return this.repoService.verifyAccount(id);
+  async verifyAccount(_id: string): Promise<void> {
+    const user = await this.userRepository.findOne({ where: { _id } });
+    if (!user) return;
+
+    user.isVerified = true;
+    user.verificationToken = null;
+    user.verificationTokenExpires = null;
+
+    await this.userRepository.save(user);
   }
 
   async confirmEmailChange(userId: string, newEmail: string): Promise<void> {
-    return this.repoService.confirmEmailChange(userId, newEmail);
+    const user = await this.userRepository.findOne({ where: { _id: userId } });
+    if (!user) return;
+
+    user.email = newEmail;
+    user.pendingEmail = null;
+    user.emailChangeToken = null;
+    user.emailChangeTokenExpires = null;
+
+    await this.userRepository.save(user);
   }
 
   async cancelScheduledDeletion(userId: string): Promise<void> {
-    return this.repoService.cancelScheduledDeletion(userId);
+    const user = await this.userRepository.findOne({ where: { _id: userId } });
+    if (!user) return;
+
+    user.isDeletionPending = null;
+    user.deletionScheduledAt = null;
+
+    await this.userRepository.save(user);
   }
 
   async markUserForDeletion(
     email: string,
     deletionScheduledAt: number,
   ): Promise<void> {
-    return this.repoService.markUserForDeletion(email, deletionScheduledAt);
+    const user = await this.userRepository.findOne({ where: { email } });
+    if (!user) return;
+
+    user.isDeletionPending = true;
+    user.deletionScheduledAt = deletionScheduledAt;
+
+    await this.userRepository.save(user);
   }
 
   async getUserRoles(id: string): Promise<Role[]> {
-    return this.repoService.getUserRoles(id);
+    const user = await this.userRepository.findOne({
+      where: { _id: id },
+      relations: ['roles'],
+    });
+
+    if (!user || user.roles.length === 0) {
+      throw new NotFoundException('User roles not found');
+    }
+
+    return user.roles.map((userRole) => userRole.role);
   }
 }

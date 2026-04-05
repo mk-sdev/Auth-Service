@@ -2,9 +2,9 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { CoreService } from './core.service';
 import { HashService } from '../utils/hash/hash.service';
-import { User } from '../repository/pg/user.entity';
-import { UserRole } from '../repository/pg/user-role.entity';
-import { RefreshToken } from '../repository/pg/refresh-token.entity';
+import { User } from '../repository/entities/user.entity';
+import { UserRole } from '../repository/entities/user-role.entity';
+import { RefreshToken } from '../repository/entities/refresh-token.entity';
 import { JwtModule, JwtService } from '@nestjs/jwt';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -14,16 +14,10 @@ import { MailService } from './mail.service';
 import { PasswordRepoService } from '../repository/passwordRepo.service';
 import { TokenRepoService } from '../repository/tokenRepo.service';
 import { UserCrudRepoService } from '../repository/userCrudRepo.service';
-import { MongoUserCrudService } from '../repository/mongo/mongoUserCrud.service';
-import { PgUserCrudService } from '../repository/pg/pgUserCrud.service';
-import { PgTokenService } from '../repository/pg/pgToken.service';
-import { MongoTokenService } from '../repository/mongo/mongoToken.service';
 import { Request } from 'express';
 import { TokensModule } from '../utils/tokens.module';
 import { TokenService } from './token.service';
 import { VerificationRepoService } from '../repository/verificationRepo.service';
-import { PgVerificationService } from '../repository/pg/pgVerification.service';
-import { MongoVerificationService } from '../repository/mongo/mongoVerification.service';
 process.env.JWT_ACCESS_SECRET = 'test_access_secret';
 process.env.JWT_REFRESH_SECRET = 'test_refresh_secret';
 
@@ -67,16 +61,10 @@ describe('CoreService - Integration (real DB)', () => {
         UserCrudRepoService,
         VerificationRepoService,
 
-        PgUserCrudService,
-        MongoUserCrudService,
-        PgTokenService,
-        MongoTokenService,
-        PgVerificationService,
-        MongoVerificationService,
         {
           provide: 'PROM_METRIC_HASHING_DURATION_SECONDS',
           useValue: {
-            startTimer: jest.fn(() => () => {}),
+            startTimer: jest.fn(() => () => { }),
           },
         },
         {

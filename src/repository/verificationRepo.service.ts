@@ -1,22 +1,15 @@
 import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { User } from './entities/user.entity';
 import { IVerification } from './interfaces/iVerification';
-import { MongoVerificationService } from './mongo/mongoVerification.service';
-import { UserDocument } from './mongo/user.schema';
-import { PgVerificationService } from './pg/pgVerification.service';
-import { User } from './pg/user.entity';
 
 @Injectable()
 export class VerificationRepoService implements IVerification {
-  private repoService: IVerification;
-
   constructor(
-    private readonly mongoService: MongoVerificationService,
-    private readonly pgService: PgVerificationService,
-  ) {
-    if (process.env.DB_TYPE === 'mongo') {
-      this.repoService = this.mongoService;
-    } else this.repoService = this.pgService;
-  }
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
+  ) { }
 
   async setNewVerificationToken(
     email: string,
@@ -24,43 +17,47 @@ export class VerificationRepoService implements IVerification {
     token: string,
     expiresAt: number,
   ): Promise<void> {
-    await this.repoService.setNewVerificationToken(
-      email,
-      password,
-      token,
-      expiresAt,
-    );
+    const user = await this.userRepository.findOne({ where: { email } });
+    if (!user) return;
+
+    user.password = password;
+    user.verificationToken = token;
+    user.verificationTokenExpires = expiresAt;
+
+    await this.userRepository.save(user);
   }
 
   async markEmailChangePending(
-    id: string,
+    _id: string,
     pendingEmail: string,
     emailChangeToken: string,
     emailChangeTokenExpires: number,
   ): Promise<void> {
-    await this.repoService.markEmailChangePending(
-      id,
-      pendingEmail,
-      emailChangeToken,
-      emailChangeTokenExpires,
-    );
+    const user = await this.userRepository.findOne({ where: { _id } });
+    if (!user) return;
+
+    user.pendingEmail = pendingEmail;
+    user.emailChangeToken = emailChangeToken;
+    user.emailChangeTokenExpires = emailChangeTokenExpires;
+
+    await this.userRepository.save(user);
   }
 
-  async findOneByVerificationToken(
-    token: string,
-  ): Promise<UserDocument | User | null> {
-    return this.repoService.findOneByVerificationToken(token);
+  async findOneByVerificationToken(token: string): Promise<User | null> {
+    return await this.userRepository.findOne({
+      where: { verificationToken: token },
+    });
   }
 
-  async findOneByEmailToken(
-    token: string,
-  ): Promise<UserDocument | User | null> {
-    return this.repoService.findOneByEmailToken(token);
+  async findOneByEmailToken(token: string): Promise<User | null> {
+    return await this.userRepository.findOne({
+      where: { emailChangeToken: token },
+    });
   }
 
-  async findOneByPasswordResetToken(
-    token: string,
-  ): Promise<UserDocument | User | null> {
-    return this.repoService.findOneByPasswordResetToken(token);
+  async findOneByPasswordResetToken(token: string): Promise<User | null> {
+    return await this.userRepository.findOne({
+      where: { passwordResetToken: token },
+    });
   }
 }

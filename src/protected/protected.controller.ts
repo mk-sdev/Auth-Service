@@ -26,7 +26,6 @@ import { SafeUserDto } from '../dtos/safe-user.dto';
 import { HashService } from '../utils/hash/hash.service';
 import { PasswordRepoService } from '../repository/passwordRepo.service';
 import { TokenRepoService } from '../repository/tokenRepo.service';
-import { UserDocument } from '../repository/mongo/user.schema';
 import { UserCrudRepoService } from '../repository/userCrudRepo.service';
 import { Role } from '../utils/interfaces';
 import { AuditInterceptor } from '../utils/audit/audit.interceptor';
@@ -34,7 +33,7 @@ import { AuditAction } from '../decorators/audit-action.decorator';
 import { CoreService } from 'src/core/core.service';
 import { Request, Response } from 'express';
 import { accessTokenOptions, refreshTokenOptions } from 'src/utils/constants';
-import { User } from 'src/repository/pg/user.entity';
+import { User } from 'src/repository/entities/user.entity';
 // import { UserRole } from 'src/repository/pg/user-role.entity';
 // import { extractRoles } from 'src/utils/extractRoles';
 
@@ -53,7 +52,7 @@ export class ProtectedController {
     private readonly userCrudRepoService: UserCrudRepoService,
     private readonly hashService: HashService,
     private readonly coreService: CoreService,
-  ) {}
+  ) { }
 
   @Roles(Role.ADMIN)
   @AuditAction('LOGIN', 'admin')
@@ -78,7 +77,7 @@ export class ProtectedController {
   @Get('user/id/:id')
   @UseGuards(JwtGuard, RolesGuard)
   async getUserById(@Param('id') id: string): Promise<SafeUserDto | null> {
-    const user: UserDocument | User | null =
+    const user: User | null =
       await this.userCrudRepoService.findOne(id);
 
     if (!user) throw new NotFoundException('User not found');
@@ -98,7 +97,7 @@ export class ProtectedController {
   async getUserByMail(
     @Param('email') email: string,
   ): Promise<SafeUserDto | null> {
-    const user: UserDocument | User | null =
+    const user: User | null =
       await this.userCrudRepoService.findOneByEmail(email);
 
     if (!user) throw new NotFoundException('User not found');

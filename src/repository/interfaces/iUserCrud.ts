@@ -1,16 +1,15 @@
 import { Provider, Role } from '../../utils/interfaces';
 import { SafeUserDto } from '../../dtos/safe-user.dto';
-import { UserDocument } from '../mongo/user.schema';
-import { User } from '../pg/user.entity';
+import { User } from '../entities/user.entity';
 
 export interface IUserCrud {
-  findOne(id: string): Promise<UserDocument | User | null>;
-  findOneByEmail(email: string): Promise<UserDocument | User | null>;
-  getAllUsers(): Promise<UserDocument[] | Pick<User, 'email'>[] | null>;
+  findOne(id: string): Promise<User | null>;
+  findOneByEmail(email: string): Promise<User | null>;
+  getAllUsers(): Promise<Pick<User, 'email'>[] | null>;
   getUsers(
     n: number,
     i: number,
-  ): Promise<UserDocument[] | Pick<User, 'email'>[] | null>;
+  ): Promise<Pick<User, 'email'>[] | null>;
   insertOne({
     email,
     password,
@@ -21,11 +20,11 @@ export interface IUserCrud {
     password: string;
     verificationToken: string;
     verificationTokenExpires: number;
-  }): Promise<UserDocument | User>;
+  }): Promise<User>;
   insertOne_OAuth(
     email: string,
     provider: Provider,
-  ): Promise<UserDocument | User>;
+  ): Promise<User>;
   moderateUser(
     _id: string,
     { email, roles, isVerified }: Omit<SafeUserDto, '_id'>,
