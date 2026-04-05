@@ -24,15 +24,18 @@ import { RefreshToken } from './repository/pg/refresh-token.entity';
       isGlobal: true, // lets use process.env in the whole app
     }),
     MongooseModule.forRoot(
-      process.env.MONGO_URI || 'mongodb://localhost:27017/imagehub',
+      process.env.MONGO_URI || 'mongodb://mongo:27017/imagehub',
     ),
     TypeOrmModule.forRoot({
       type: 'postgres',
-      host: process.env.DB_HOST || 'localhost',
-      port: +process.env.DB_PORT! || 5433,
+      host: process.env.DB_HOST || 'postgres',
+      port: +process.env.DB_PORT! || 5432,
       username: process.env.DB_USER || 'auth_user',
       password: process.env.DB_PASSWORD || 'auth_password',
-      database: process.env.DB_NAME || 'auth_db',
+      database:
+        process.env.NODE_ENV === 'test'
+          ? 'test_db'
+          : process.env.DB_NAME || 'auth_db',
       entities: [User, UserRole, RefreshToken],
       synchronize: true,
     }),
