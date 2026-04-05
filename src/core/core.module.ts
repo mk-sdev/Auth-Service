@@ -8,11 +8,13 @@ import { CoreService } from './core.service';
 import { TokenController } from './token.controller';
 import { TokenService } from './token.service';
 import { MailService } from './mail.service';
+import { TwoFactorService } from './2fa.service';
+import { TwoFactorController } from './2fa.controller';
 
 @Module({
   imports: [RepositoryModule, TokensModule, AuditModule, HashModule],
-  controllers: [CoreController, TokenController],
-  providers: [CoreService, TokenService, MailService],
+  controllers: [CoreController, TokenController, TwoFactorController],
+  providers: [CoreService, TokenService, MailService, TwoFactorService],
   exports: [CoreService],
 })
 export class CoreModule {}

@@ -18,6 +18,7 @@ import { HashService } from '../utils/hash/hash.service';
 import { JwtPayload, Role } from '../utils/interfaces';
 import { InvalidCredentialsException } from '../utils/invalid-credentials.exception';
 import { MailService } from './mail.service';
+import { TwoFactorService } from './2fa.service';
 type NewPayload = Omit<JwtPayload, 'iat' | 'exp'>;
 
 @Injectable()
@@ -30,17 +31,20 @@ export class CoreService {
     private readonly accessTokenService: JwtService,
     @Inject('JWT_REFRESH_SERVICE')
     private readonly refreshTokenService: JwtService,
+    @Inject('2FA_TOKEN_SERVICE')
+    private readonly jwtService: JwtService,
     private readonly hashService: HashService,
     @Inject('REDIS_CLIENT') private readonly redis: Redis,
     private readonly auditLogger: AuditLoggerService,
     private readonly mailService: MailService,
+    private readonly twoFactorService: TwoFactorService,
   ) { }
 
   async login(
     email: string,
     req: Request,
     password?: string, // when logging via OAuth password is not needed
-  ): Promise<{ access_token: string; refresh_token: string }> {
+  ): Promise<{ access_token: string; refresh_token: string } | { requires2FA: true; tempToken: string }> {
     const key = `login_attempts:${email}`;
     const ttlSeconds = 60 * 5; // 5 minutes
 
@@ -54,7 +58,7 @@ export class CoreService {
 
     const { ip, path, method } = createAuditDetails(req);
 
-    if (attempts > 5) {
+    if (attempts > 50) {//TODO: change to 5
       this.auditLogger.warn('anonymous', 'LOGIN_RATE_LIMIT_EXCEEDED', {
         ip,
         path,
@@ -114,6 +118,17 @@ export class CoreService {
       }
     }
 
+    if (user.isTwoFactorEnabled) {
+      await this.twoFactorService.generateOtp(user._id); // np. 6 cyfr
+      const tempToken = await this.jwtService.signAsync(
+        { sub: user._id, type: '2fa' },
+        { expiresIn: '5m' },
+      );
+      return {
+        requires2FA: true,
+        tempToken, // lub lepiej: jakiś tymczasowy token 
+      };
+    }
     //* if the user is found and the password matches, generate a JWT token and send it back
     const payload: NewPayload = {
       sub: user._id,

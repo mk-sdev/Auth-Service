@@ -62,14 +62,21 @@ export class ProtectedController {
     @Res({ passthrough: true }) response: Response,
     @Req() req: Request,
   ) {
-    const { access_token, refresh_token } = await this.coreService.login(
+    const result = await this.coreService.login(
       loginDto.email,
       req,
       loginDto.password,
     );
 
+    if ('requires2FA' in result) {
+      return result;
+    }
+
+    const { access_token, refresh_token } = result;
+
     response.cookie('access_token', access_token, accessTokenOptions);
     response.cookie('refresh_token', refresh_token, refreshTokenOptions);
+
     return { message: 'Login successful' };
   }
 

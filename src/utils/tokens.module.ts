@@ -22,7 +22,16 @@ import { access_jwt_lifespan, refresh_jwt_lifespan } from './constants';
         });
       },
     },
+    {
+      provide: '2FA_TOKEN_SERVICE',
+      useFactory: () => {
+        return new JwtService({
+          secret: process.env.JWT_REFRESH_SECRET,
+          signOptions: { expiresIn: refresh_jwt_lifespan },
+        });
+      },
+    },
   ],
-  exports: ['JWT_ACCESS_SERVICE', 'JWT_REFRESH_SERVICE'],
+  exports: ['JWT_ACCESS_SERVICE', 'JWT_REFRESH_SERVICE', '2FA_TOKEN_SERVICE'],
 })
-export class TokensModule {}
+export class TokensModule { }

@@ -16,6 +16,51 @@ export class UserCrudRepoService implements IUserCrud {
     private readonly roleRepository: Repository<UserRole>,
   ) { }
 
+  // 🔹 1. Włączenie 2FA
+  async enableTwoFactor(userId: string): Promise<void> {
+    await this.userRepository.update(userId, {
+      isTwoFactorEnabled: true,
+    });
+  }
+
+  // 🔹 2. Wyłączenie 2FA i czyszczenie OTP
+  async disableTwoFactor(userId: string): Promise<void> {
+    await this.userRepository.update(userId, {
+      isTwoFactorEnabled: false,
+      twoFactorOtp: null,
+      twoFactorOtpExpires: null,
+    });
+  }
+
+  // 🔹 3. Ustawienie OTP (czysto zapis do bazy)
+  async setTwoFactorOtp(userId: string, otp: string | null, expiresAt: Date | null): Promise<void> {
+    await this.userRepository.update(userId, {
+      twoFactorOtp: otp,
+      twoFactorOtpExpires: expiresAt,
+    });
+  }
+
+  // 🔹 4. Pobranie OTP i daty wygaśnięcia (do weryfikacji w serwisie)
+  async getTwoFactorOtp(userId: string): Promise<{ otp: string; expiresAt: Date } | null> {
+    const user = await this.userRepository.findOne({
+      where: { _id: userId },
+      select: ['twoFactorOtp', 'twoFactorOtpExpires'],
+    });
+
+    if (!user || !user.twoFactorOtp || !user.twoFactorOtpExpires) return null;
+
+    return { otp: user.twoFactorOtp, expiresAt: user.twoFactorOtpExpires };
+  }
+
+  // 🔹 5. Pobranie stanu 2FA (czy włączona)
+  async isTwoFactorEnabled(userId: string): Promise<boolean> {
+    const user = await this.userRepository.findOne({
+      where: { _id: userId },
+      select: ['isTwoFactorEnabled'],
+    });
+    return user?.isTwoFactorEnabled || false;
+  }
+
   async findOne(_id: string): Promise<User | null> {
     return await this.userRepository.findOne({ where: { _id } });
   }

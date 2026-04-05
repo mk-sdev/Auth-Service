@@ -21,7 +21,6 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
     profile: any,
     done: VerifyCallback,
   ): Promise<any> {
-    // Bezpieczne wyciągnięcie e-maila i statusu weryfikacji
     const email = profile.emails?.[0]?.value;
     const emailVerified = profile._json?.email_verified;
 
@@ -32,7 +31,6 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
       );
     }
 
-    // Możesz dodatkowo wymagać weryfikacji
     if (!emailVerified) {
       return done(
         new UnauthorizedException('Email nie jest zweryfikowany'),

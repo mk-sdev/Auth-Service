@@ -42,7 +42,7 @@ export class CoreController {
   constructor(
     private readonly coreService: CoreService,
     private userCrudRepoService: UserCrudRepoService,
-  ) {}
+  ) { }
 
   @Get('health-check')
   getHealthStatus(): { uptime: number; status: string; timestamp: Date } {
@@ -64,11 +64,17 @@ export class CoreController {
     @Req() req: Request,
     @Platform() platform: 'web' | 'mobile',
   ) {
-    const { access_token, refresh_token } = await this.coreService.login(
+    const result = await this.coreService.login(
       loginDto.email,
       req,
       loginDto.password,
     );
+
+    if ('requires2FA' in result) {
+      return result;
+    }
+
+    const { access_token, refresh_token } = result;
 
     // cookies
     if (platform === 'web') {
@@ -79,7 +85,6 @@ export class CoreController {
 
     // headers
     response.setHeader('Authorization', `Bearer ${access_token}`);
-    // response.setHeader('X-Refresh-Token', refresh_token);
 
     return { message: 'Login successful', refresh_token };
   }

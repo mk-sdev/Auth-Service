@@ -2,7 +2,7 @@ import { MailerService } from '@nestjs-modules/mailer';
 import { URL } from '../utils/constants';
 
 export class MailService {
-  constructor(private readonly mailerService: MailerService) {}
+  constructor(private readonly mailerService: MailerService) { }
 
   private readonly footer =
     "<span style='color: red'>Beware of phishing attempts. Always verify the sender's email address and avoid clicking on suspicious links.</span>";
@@ -74,6 +74,25 @@ export class MailService {
       await this.mailerService.sendMail({
         to: toEmail,
         subject: 'Account Deletion Scheduled',
+        template: undefined,
+        context: {},
+        html,
+      });
+    else console.log(html);
+  }
+
+  async send2faCode(toEmail: string, code: string) {
+    const html = `
+              <h3>Your 2FA Code</h3>
+              <p>Your Two-Factor Authentication (2FA) code is: <strong>${code}</strong></p>
+              <p>This code will expire in 10 minutes. If you did not request this code, please secure your account immediately.</p>
+              ${this.footer}
+            `;
+
+    if (process.env.node_env === 'production')
+      await this.mailerService.sendMail({
+        to: toEmail,
+        subject: 'Your 2FA Code',
         template: undefined,
         context: {},
         html,
