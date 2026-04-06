@@ -5,6 +5,7 @@ import { HashService } from 'src/utils/hash/hash.service';
 import { UserCrudRepoService } from '../repository/userCrudRepo.service';
 import { MailService } from './mail.service';
 import { JwtPayload } from 'src/utils/interfaces';
+import Redis from 'ioredis';
 
 @Injectable()
 export class TwoFactorService {
@@ -18,6 +19,7 @@ export class TwoFactorService {
     private readonly refreshTokenService: JwtService,
     @Inject('2FA_TOKEN_SERVICE')
     private readonly tempTokenService: JwtService,
+    @Inject('REDIS_CLIENT') private readonly redis: Redis,
   ) { }
 
   async enableTwoFactor(userId: string) {
@@ -50,6 +52,21 @@ export class TwoFactorService {
   }
 
   async verifyOtp(tempToken: string, otp: string) {
+    const key = `2fa_attempts:${tempToken}`;
+    const ttlSeconds = 60 * 5; // 5 min
+
+    const attempts = await this.redis.incr(key);
+
+    if (attempts === 1) {
+      await this.redis.expire(key, ttlSeconds);
+    }
+
+    if (attempts > 5) {
+      throw new UnauthorizedException(
+        'Too many attempts.',
+      );
+    }
+
     // verify tempToken and extract userId
     let payload: { sub: string; roles: string[] };
     try {
@@ -58,29 +75,29 @@ export class TwoFactorService {
     } catch (err) {
       throw new UnauthorizedException('Invalid or expired token');
     }
-    
+
     const userId = payload.sub;
-    
+
     // get user and OTP
     const user = await this.userRepo.findOne(userId);
     if (!user || !user.twoFactorOtp) {
       throw new UnauthorizedException('2FA not set or invalid');
     }
-    
+
     if (user.twoFactorOtpExpires! < new Date()) {
       throw new UnauthorizedException('Code expired');
     }
-    
+
     // check OTP
     console.log(otp, user.twoFactorOtp)
     const isValid = await this.hashService.verify(user.twoFactorOtp, otp);
     if (!isValid) {
       throw new UnauthorizedException('Invalid code');
     }
-    
+
     // clear OTP
     await this.userRepo.setTwoFactorOtp(user._id as string, null, null);
-    
+
     // Generate JWT tokens
     const fullPayload: Omit<JwtPayload, 'iat' | 'exp'> = {
       sub: user._id,
@@ -90,6 +107,7 @@ export class TwoFactorService {
     const access_token = await this.accessTokenService.signAsync(fullPayload);
     const refresh_token = await this.refreshTokenService.signAsync(fullPayload);
 
+    await this.redis.del(`2fa_attempts:${tempToken}`);
     return { access_token, refresh_token };
   }
 }
