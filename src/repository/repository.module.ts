@@ -7,10 +7,11 @@ import { PasswordRepoService } from './passwordRepo.service';
 import { TokenRepoService } from './tokenRepo.service';
 import { UserCrudRepoService } from './userCrudRepo.service';
 import { VerificationRepoService } from './verificationRepo.service';
+import { BackupCode } from './entities/backup-code.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User, UserRole, RefreshToken]),
+    TypeOrmModule.forFeature([User, UserRole, RefreshToken, BackupCode]),
   ],
   providers: [
     UserCrudRepoService,

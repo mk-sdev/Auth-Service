@@ -9,6 +9,7 @@ import {
 import { Provider } from '../../utils/interfaces';
 import { RefreshToken } from './refresh-token.entity';
 import { UserRole } from './user-role.entity';
+import { BackupCode } from './backup-code.entity';
 
 @Entity('users')
 export class User {
@@ -27,6 +28,9 @@ export class User {
 
   @OneToMany(() => RefreshToken, (token) => token.user, { cascade: true })
   refreshTokens: Relation<RefreshToken[]>;
+
+  @OneToMany(() => BackupCode, (code) => code.user, { cascade: true })
+  backupCodes: Relation<BackupCode[]>;
 
   @Column({
     type: 'enum',

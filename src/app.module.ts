@@ -16,6 +16,7 @@ import { AuditModule } from './utils/audit/audit.module';
 import { HashModule } from './utils/hash/hash.module';
 import { RedisModule } from './utils/redis.module';
 import { TokensModule } from './utils/tokens.module';
+import { BackupCode } from './repository/entities/backup-code.entity';
 
 @Module({
   imports: [
@@ -32,7 +33,7 @@ import { TokensModule } from './utils/tokens.module';
         process.env.NODE_ENV === 'test'
           ? 'test_db'
           : process.env.DB_NAME || 'auth_db',
-      entities: [User, UserRole, RefreshToken],
+      entities: [User, UserRole, RefreshToken, BackupCode],
       synchronize: true,
     }),
     ThrottlerModule.forRoot({
