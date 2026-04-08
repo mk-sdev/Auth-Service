@@ -80,12 +80,14 @@ export class User {
   @Column({ name: 'deletion_scheduled_at', type: 'bigint', nullable: true })
   deletionScheduledAt?: number | null;
 
-  @Column({ name: 'is_2fa_enabled', type: 'boolean', default: false })
-  isTwoFactorEnabled?: boolean;
+    // sekret TOTP po potwierdzeniu 2FA
+    @Column({name: "otp_secret", type: "text", nullable: true })
+    otpSecret?: string;
 
-  @Column({ name: '2fa_otp', type: 'varchar', nullable: true })
-  twoFactorOtp?: string | null;
+    // tymczasowy sekret przy setupie 2FA
+    @Column({name: "otp_temp_secret", type: "text", nullable: true })
+    otpTempSecret?: string;
 
-  @Column({ name: '2fa_otp_expires', type: 'timestamp', nullable: true })
-  twoFactorOtpExpires?: Date | null;
+    @Column({ name: "is_2fa_enabled", type: "boolean", default: false })
+    isTwoFactorEnabled?: boolean;
 }

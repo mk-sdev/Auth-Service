@@ -25,7 +25,7 @@ import { JwtGuard } from '../guards/jwt.guard';
 import { AuditInterceptor } from '../utils/audit/audit.interceptor';
 import { HashInterceptor } from '../utils/hash/hash.interceptor';
 import { CoreService } from './core.service';
-import { accessTokenOptions, refreshTokenOptions } from 'src/utils/constants';
+import { accessTokenOptions, refreshTokenOptions, twoFATokenOptions } from 'src/utils/constants';
 import { Platform } from 'src/decorators/platform.decorator';
 import { UserCrudRepoService } from 'src/repository/userCrudRepo.service';
 import { SetPasswordDto } from 'src/dtos/set-password.dto';
@@ -71,6 +71,7 @@ export class CoreController {
     );
 
     if ('requires2FA' in result) {
+      response.cookie('2fa_token', result.tempToken, twoFATokenOptions)
       return result;
     }
 

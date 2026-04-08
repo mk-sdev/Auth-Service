@@ -31,7 +31,7 @@ export class OAuthController {
 
     const REDIRECT_URI =
       platform === 'web' ? WEB_REDIRECT_URI : MOBILE_REDIRECT_URI;
-
+    //FIXME: nawet jak user ma disabled 2fa to przekieorowuje na stronę do wpisania kodu
     if ('requires2FA' in result) {
       const redirectUrl = new URL(REDIRECT_URI+'?2fa=true&tempToken='+result.tempToken);
       return res.redirect(redirectUrl.toString());

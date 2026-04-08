@@ -14,10 +14,19 @@ export const refreshTokenOptions: CookieOptions = {
   maxAge: 1000 * 60 * 60, // 1 hour
 };
 
+export const twoFATokenOptions: CookieOptions = {
+  httpOnly: true,
+  secure: false,
+  sameSite: 'lax',
+  maxAge: 1000 * 60 * 1, // 1 minute
+};
+
 // access jwt lifespan
 export const access_jwt_lifespan = '15m';
 // refresh jwt lifespan
 export const refresh_jwt_lifespan = '1h';
+
+export const two_fa_jwt_lifespan = '1m';
 
 // token lifespan to confirm password change
 export const password_reset_lifespan = 1000 * 60 * 20; // 20 min
@@ -32,6 +41,6 @@ export const URL = 'http://localhost:3000'; // url of this auth service
 export const FRONTEND_URL = 'http://localhost:4200'; // url of the frontend application
 export const OAUTH_REDIRECT_URI = 'http://localhost:3000/auth/google/callback';
 
-export const WEB_REDIRECT_URI = 'http://localhost:4200/login'; // after proper oauth login redirect to this page
+export const WEB_REDIRECT_URI = 'http://localhost:4200/two-factor-screen'; // after proper oauth login redirect to this page
 export const MOBILE_REDIRECT_URI = 'imagehub://oauth-callback';
 export const CALLBACK_URL = 'http://localhost:3000/oauth/google/redirect';

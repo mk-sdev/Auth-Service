@@ -18,7 +18,7 @@ import { HashService } from '../utils/hash/hash.service';
 import { JwtPayload, Role } from '../utils/interfaces';
 import { InvalidCredentialsException } from '../utils/invalid-credentials.exception';
 import { MailService } from './mail.service';
-import { TwoFactorService } from './2fa.service';
+// import { TwoFactorService } from './2fa.service';
 type NewPayload = Omit<JwtPayload, 'iat' | 'exp'>;
 
 @Injectable()
@@ -32,12 +32,12 @@ export class CoreService {
     @Inject('JWT_REFRESH_SERVICE')
     private readonly refreshTokenService: JwtService,
     @Inject('2FA_TOKEN_SERVICE')
-    private readonly jwtService: JwtService,
+    private readonly twoFATokenService: JwtService,
     private readonly hashService: HashService,
     @Inject('REDIS_CLIENT') private readonly redis: Redis,
     private readonly auditLogger: AuditLoggerService,
     private readonly mailService: MailService,
-    private readonly twoFactorService: TwoFactorService,
+    // private readonly twoFactorService: TwoFactorService,
   ) { }
 
   async login(
@@ -119,10 +119,10 @@ export class CoreService {
     }
 
     if (user.isTwoFactorEnabled) {
-      await this.twoFactorService.generateOtp(user._id); // np. 6 cyfr
-      const tempToken = await this.jwtService.signAsync(
+      console.log(user.isTwoFactorEnabled)
+      // await this.twoFactorService.generateOtp(user._id); // np. 6 cyfr
+      const tempToken = await this.twoFATokenService.signAsync(
         { sub: user._id, type: '2fa' },
-        { expiresIn: '5m' },
       );
       return {
         requires2FA: true,
@@ -132,7 +132,7 @@ export class CoreService {
     //* if the user is found and the password matches, generate a JWT token and send it back
     const payload: NewPayload = {
       sub: user._id,
-      roles: user.roles.map(r => r.role), // ✅ mapujemy obiekty UserRole do enum Role
+      roles: user.roles.map(r => r.role), //  mapujemy obiekty UserRole do enum Role
     };
     const access_token = await this.accessTokenService.signAsync(payload);
     const refresh_token = await this.refreshTokenService.signAsync(payload);
