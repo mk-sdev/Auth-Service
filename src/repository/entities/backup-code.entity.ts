@@ -3,14 +3,17 @@ import {
     Entity,
     JoinColumn,
     ManyToOne,
-    PrimaryColumn,
+    PrimaryGeneratedColumn,
     Relation
 } from 'typeorm';
 import { User } from './user.entity';
 
 @Entity('backup_codes')
 export class BackupCode {
-    @PrimaryColumn({ type: 'text' })
+    @PrimaryGeneratedColumn({ name: 'id' })
+    id: number;
+
+    @Column({ name: 'code', type: 'text' })
     code: string;
 
     @Column({ name: 'user_id', type: 'uuid' })
@@ -20,5 +23,5 @@ export class BackupCode {
         onDelete: 'CASCADE',
     })
     @JoinColumn({ name: 'user_id' })
-    user: Relation<User>;
+    user: Relation<User>; // FK
 }
