@@ -41,6 +41,6 @@ export const URL = 'http://localhost:3000'; // url of this auth service
 export const FRONTEND_URL = 'http://localhost:4200'; // url of the frontend application
 export const OAUTH_REDIRECT_URI = 'http://localhost:3000/auth/google/callback';
 
-export const WEB_REDIRECT_URI = 'http://localhost:4200/two-factor-screen'; // after proper oauth login redirect to this page
+export const WEB_REDIRECT_URI = 'http://localhost:4200'; // after proper oauth login redirect to this page
 export const MOBILE_REDIRECT_URI = 'imagehub://oauth-callback';
 export const CALLBACK_URL = 'http://localhost:3000/oauth/google/redirect';
