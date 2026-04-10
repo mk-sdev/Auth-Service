@@ -13,6 +13,18 @@ services:
       - redis
       - postgres
 
+  2fa:
+    image: python:slim
+    working_dir: /app
+    volumes:
+      - ../Flask-2fa:/app
+    command: sh -c "pip install -r requirements.txt && python app.py"
+    ports:
+      - '5000:5000'
+    depends_on:
+      - redis
+      - postgres
+
   loki:
     image: grafana/loki:latest
     ports:
