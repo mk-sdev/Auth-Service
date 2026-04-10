@@ -13,6 +13,6 @@ import { MailService } from './mail.service';
   imports: [RepositoryModule, TokensModule, AuditModule, HashModule],
   controllers: [CoreController, TokenController, ],
   providers: [CoreService, TokenService, MailService, ],
-  exports: [CoreService],
+  exports: [CoreService, TokenService],
 })
 export class CoreModule {}

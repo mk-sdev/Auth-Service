@@ -68,7 +68,7 @@ export class ProtectedController {
       loginDto.password,
     );
 
-    if ('requires2FA' in result) {
+    if ('_2fa_token' in result) {
       return result;
     }
 

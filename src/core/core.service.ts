@@ -44,7 +44,7 @@ export class CoreService {
     email: string,
     req: Request,
     password?: string, // when logging via OAuth password is not needed
-  ): Promise<{ access_token: string; refresh_token: string } | { requires2FA: true; tempToken: string }> {
+  ): Promise<{ access_token: string; refresh_token: string } | { _2fa_token: string }> {
     const key = `login_attempts:${email}`;
     const ttlSeconds = 60 * 5; // 5 minutes
 
@@ -121,12 +121,11 @@ export class CoreService {
     if (user.isTwoFactorEnabled) {
       console.log(user.isTwoFactorEnabled)
       // await this.twoFactorService.generateOtp(user._id); // np. 6 cyfr
-      const tempToken = await this.twoFATokenService.signAsync(
+      const _2fa_token = await this.twoFATokenService.signAsync(
         { sub: user._id, type: '2fa' },
       );
       return {
-        requires2FA: true,
-        tempToken, // lub lepiej: jakiś tymczasowy token 
+        _2fa_token,
       };
     }
     //* if the user is found and the password matches, generate a JWT token and send it back

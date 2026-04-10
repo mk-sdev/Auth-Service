@@ -7,13 +7,14 @@ import { User } from 'src/repository/entities/user.entity';
 
 export type LoginResult =
   | { access_token: string; refresh_token: string }
-  | { requires2FA: true; tempToken: string };
+  | { _2fa_token: string };
 
 @Injectable()
 export class OAuthService {
   constructor(
     private readonly coreService: CoreService,
     private readonly userCrudRepoService: UserCrudRepoService,
+    
   ) {}
 
   async fn(

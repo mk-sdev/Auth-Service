@@ -7,6 +7,7 @@ import {
   WEB_REDIRECT_URI,
   accessTokenOptions,
   refreshTokenOptions,
+  twoFATokenOptions,
 } from '../utils/constants';
 import { OAuthService, LoginResult } from './oauth.service';
 import { Platform } from '../decorators/platform.decorator';
@@ -45,10 +46,11 @@ export class OAuthController {
     const REDIRECT_URI =
       platform === 'web' ? WEB_REDIRECT_URI : MOBILE_REDIRECT_URI;
 
-    if ('requires2FA' in result) {
+    if ('_2fa_token' in result) {
       const redirectUrl = new URL(
-        `${REDIRECT_URI}?2fa=true&tempToken=${result.tempToken}`,
+        `${REDIRECT_URI}/two-factor-screen/?2fa=true&tempToken=${result._2fa_token}`,
       );
+      res.cookie('2fa_token', result._2fa_token, twoFATokenOptions);
       return res.redirect(redirectUrl.toString());
     }
 

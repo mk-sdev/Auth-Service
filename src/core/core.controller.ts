@@ -42,6 +42,7 @@ export class CoreController {
   constructor(
     private readonly coreService: CoreService,
     private userCrudRepoService: UserCrudRepoService,
+    
   ) { }
 
   @Get('health-check')
@@ -70,8 +71,8 @@ export class CoreController {
       loginDto.password,
     );
 
-    if ('requires2FA' in result) {
-      response.cookie('2fa_token', result.tempToken, twoFATokenOptions)
+    if ('_2fa_token' in result) {
+      response.cookie('2fa_token', result._2fa_token, twoFATokenOptions)
       return result;
     }
 
