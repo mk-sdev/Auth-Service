@@ -58,7 +58,7 @@ export class CoreService {
 
     const { ip, path, method } = createAuditDetails(req);
 
-    if (attempts > 50) {//TODO: change to 5
+    if (attempts > 5) {//TODO: change to 5
       this.auditLogger.warn('anonymous', 'LOGIN_RATE_LIMIT_EXCEEDED', {
         ip,
         path,

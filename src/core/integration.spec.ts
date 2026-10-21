@@ -3,6 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { CoreService } from './core.service';
 import { HashService } from '../utils/hash/hash.service';
 import { User } from '../repository/entities/user.entity';
+import { BackupCode } from '../repository/entities/backup-code.entity';
 import { UserRole } from '../repository/entities/user-role.entity';
 import { RefreshToken } from '../repository/entities/refresh-token.entity';
 import { JwtModule, JwtService } from '@nestjs/jwt';
@@ -20,6 +21,7 @@ import { TokenService } from './token.service';
 import { VerificationRepoService } from '../repository/verificationRepo.service';
 process.env.JWT_ACCESS_SECRET = 'test_access_secret';
 process.env.JWT_REFRESH_SECRET = 'test_refresh_secret';
+process.env.PEPPER=""
 
 describe('CoreService - Integration (real DB)', () => {
   let coreService: CoreService;
@@ -40,10 +42,10 @@ describe('CoreService - Integration (real DB)', () => {
           username: process.env.DB_USER || 'auth_user',
           password: process.env.DB_PASSWORD || 'auth_password',
           database: 'test_db',
-          entities: [User, UserRole, RefreshToken],
+          entities: [User, UserRole, RefreshToken, BackupCode],
           synchronize: true,
         }),
-        TypeOrmModule.forFeature([User, UserRole, RefreshToken]),
+        TypeOrmModule.forFeature([User, UserRole, RefreshToken, BackupCode]),
         JwtModule.register({
           secret: 'test',
           signOptions: { expiresIn: '1h' },
@@ -142,6 +144,10 @@ describe('CoreService - Integration (real DB)', () => {
     } as unknown as Request;
 
     const jwts = await coreService.login(user!.email, mockRequest, 'zaq1@WSX');
+
+    if (!('access_token' in jwts) || !('refresh_token' in jwts)) {
+      throw new Error('Expected access and refresh tokens for standard login');
+    }
 
     expect(jwts.access_token).toBeDefined();
     expect(jwts.refresh_token).toBeDefined();

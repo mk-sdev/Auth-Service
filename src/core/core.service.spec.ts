@@ -89,6 +89,13 @@ describe('CoreService', () => {
           provide: HashService,
           useValue: hashService,
         },
+        {
+          provide: '2FA_TOKEN_SERVICE',
+          useValue: {
+            signAsync: jest.fn(),
+            verifyAsync: jest.fn(),
+          },
+        },
       ],
     }).compile();
 
