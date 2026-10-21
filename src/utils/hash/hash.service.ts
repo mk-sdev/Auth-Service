@@ -8,28 +8,32 @@ export class HashService {
   constructor(
     @InjectMetric('hashing_duration_seconds')
     private readonly hashingDurationHistogram: Histogram<string>,
-  ) {}
+  ) { }
 
-  async hash(data: string): Promise<string> {
+  async hash(preimage: string): Promise<string> {
     const endTimer = this.hashingDurationHistogram.startTimer();
     try {
       const options =
         process.env.NODE_ENV !== 'test'
           ? {
-              type: argon2.argon2id,
-              timeCost: 4,
-              memoryCost: 2 ** 16,
-              parallelism: 2,
-            }
+            type: argon2.argon2id,
+            timeCost: 4,
+            memoryCost: 2 ** 16,
+            parallelism: 2,
+          }
           : undefined;
 
-      return argon2.hash(data, options);
+      preimage = process.env.PEPPER ? preimage + process.env.PEPPER : preimage;
+
+      return argon2.hash(preimage, options);
     } finally {
       endTimer();
     }
   }
 
-  async verify(hash: string, plain: string): Promise<boolean> {
-    return argon2.verify(hash, plain);
+  async verify(hash: string, preimage: string): Promise<boolean> {
+    const pepper = process.env.PEPPER;
+    preimage = process.env.PEPPER ? preimage + process.env.PEPPER : preimage;
+    return argon2.verify(hash, preimage + pepper);
   }
 }
