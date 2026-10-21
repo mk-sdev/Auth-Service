@@ -36,6 +36,8 @@ An authentication & authorization microservice designed to integrate easily into
 ```
 NODE_ENV=development # or production or test
 
+PEPPER=
+
 JWT_ACCESS_SECRET=
 JWT_REFRESH_SECRET=
 
