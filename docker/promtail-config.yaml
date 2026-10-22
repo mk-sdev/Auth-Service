@@ -15,4 +15,4 @@ scrape_configs:
           - localhost
         labels:
           job: nestjs
-          __path__: /app/logs/audit.log
+          __path__: /app/logs/*.log*
