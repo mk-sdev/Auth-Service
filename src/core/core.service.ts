@@ -2,6 +2,7 @@ import {
   ConflictException,
   Inject,
   Injectable,
+  OnModuleInit,
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
@@ -22,7 +23,9 @@ import { MailService } from './mail.service';
 type NewPayload = Omit<JwtPayload, 'iat' | 'exp'>;
 
 @Injectable()
-export class CoreService {
+export class CoreService implements OnModuleInit {
+  private dummyPasswordHashPromise: Promise<string> | null = null;
+
   constructor(
     private readonly passwordRepoService: PasswordRepoService,
     private readonly tokenRepoService: TokenRepoService,
@@ -39,6 +42,17 @@ export class CoreService {
     private readonly mailService: MailService,
     // private readonly twoFactorService: TwoFactorService,
   ) { }
+
+  async onModuleInit(): Promise<void> {
+    await this.getDummyPasswordHash();
+  }
+
+  private getDummyPasswordHash(): Promise<string> {
+    this.dummyPasswordHashPromise ??= this.hashService.hash(
+      'dummy-password-used-only-for-timing-equalization',
+    );
+    return this.dummyPasswordHashPromise;
+  }
 
   async login(
     email: string,
@@ -72,7 +86,16 @@ export class CoreService {
       );
     }
 
-    const user = await this.userCrudRepoService.findOneByEmail(email); //* find a user with a provided email
+    const user = await this.userCrudRepoService.findOneByEmail(email, false); //* find a user with a provided email
+    let isPasswordValid = false;
+    if (password || !user || !user.isVerified) {
+      const passwordHash = user?.password || (await this.getDummyPasswordHash());
+      isPasswordValid = await this.hashService.verify(
+        passwordHash,
+        password ?? '',
+      );
+    }
+
     if (!user) {
       this.auditLogger.warn('anonymous', 'LOGIN_USER_NOT_FOUND', {
         ip,
@@ -90,32 +113,17 @@ export class CoreService {
         method,
         email,
       });
-      throw new UnauthorizedException(
-        'Verify your account in order to sign in.',
-      );
-    }
-
-    if (password && !user.password) {
-      // users registered via OAuth don't have a password set
       throw new InvalidCredentialsException();
     }
 
-    if (password) {
-      //* check if the password matches
-      const isPasswordValid: boolean = await this.hashService.verify(
-        user.password!,
-        password,
-      );
-
-      if (!isPasswordValid) {
-        this.auditLogger.warn(user._id as string, 'LOGIN_WRONG_PASSWORD', {
-          ip,
-          path,
-          method,
-          email,
-        });
-        throw new InvalidCredentialsException();
-      }
+    if (password && (!user.password || !isPasswordValid)) {
+      this.auditLogger.warn(user._id as string, 'LOGIN_WRONG_PASSWORD', {
+        ip,
+        path,
+        method,
+        email,
+      });
+      throw new InvalidCredentialsException();
     }
 
     if (user.isTwoFactorEnabled) {
@@ -129,9 +137,10 @@ export class CoreService {
       };
     }
     //* if the user is found and the password matches, generate a JWT token and send it back
+    const userWithRoles = await this.userCrudRepoService.findOneByEmail(email);
     const payload: NewPayload = {
       sub: user._id,
-      roles: user.roles.map(r => r.role), //  mapujemy obiekty UserRole do enum Role
+      roles: userWithRoles?.roles.map((userRole) => userRole.role) ?? [],
     };
     const access_token = await this.accessTokenService.signAsync(payload);
     const refresh_token = await this.refreshTokenService.signAsync(payload);

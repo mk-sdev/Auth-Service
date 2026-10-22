@@ -4,7 +4,7 @@ import {
   Injectable,
   NestInterceptor,
 } from '@nestjs/common';
-import { Observable, tap } from 'rxjs';
+import { Observable, finalize } from 'rxjs';
 import { UserRequest } from '../interfaces';
 
 // * To monitor the execution time of endpoints that use hashing
@@ -15,14 +15,12 @@ export class HashInterceptor implements NestInterceptor {
     const now = Date.now();
     const req = context.switchToHttp().getRequest<UserRequest>();
     console.log(`[${req.method}] ${req.url} - incoming...`);
-    return next
-      .handle()
-      .pipe(
-        tap(() =>
-          console.log(
-            `[${req.method}] ${req.url} - done in ${Date.now() - now}ms`,
-          ),
-        ),
-      );
+    return next.handle().pipe(
+      finalize(() => {
+        console.log(
+          `[${req.method}] ${req.url} - completed in ${Date.now() - now}ms`,
+        );
+      }),
+    );
   }
 }

@@ -65,8 +65,14 @@ export class UserCrudRepoService implements IUserCrud {
     return await this.userRepository.findOne({ where: { _id } });
   }
 
-  async findOneByEmail(email: string): Promise<User | null> {
-    return await this.userRepository.findOne({ where: { email }, relations: ['roles'] });
+  async findOneByEmail(
+    email: string,
+    includeRoles = true,
+  ): Promise<User | null> {
+    return await this.userRepository.findOne({
+      where: { email },
+      ...(includeRoles ? { relations: ['roles'] } : {}),
+    });
   }
 
   async getAllUsers(): Promise<Pick<User, 'email'>[]> {
