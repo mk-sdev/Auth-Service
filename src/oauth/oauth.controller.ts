@@ -1,6 +1,16 @@
-import { Controller, Get, Query, Req, Res } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Inject,
+  Query,
+  Req,
+  Res,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { Response, Request } from 'express';
 import axios from 'axios';
+import { randomBytes } from 'crypto';
+import Redis from 'ioredis';
 import {
   CALLBACK_URL,
   WEB_REDIRECT_URI,
@@ -12,11 +22,17 @@ import { OAuthService, LoginResult } from './oauth.service';
 
 @Controller('oauth')
 export class OAuthController {
-  constructor(private readonly oauthService: OAuthService) { }
+  constructor(
+    private readonly oauthService: OAuthService,
+    @Inject('REDIS_CLIENT') private readonly redis: Redis,
+  ) {}
 
   @Get('google')
   async googleAuth(@Res() res: Response) {
     const url = new URL('https://accounts.google.com/o/oauth2/v2/auth');
+    const state = randomBytes(32).toString('base64url');
+
+    await this.redis.set(`oauth:google:state:${state}`, '1', 'EX', 300);
 
     url.searchParams.set('client_id', process.env.GOOGLE_CLIENT_ID!);
     url.searchParams.set('redirect_uri', CALLBACK_URL);
@@ -24,6 +40,7 @@ export class OAuthController {
     url.searchParams.set('scope', 'openid email profile');
     url.searchParams.set('access_type', 'offline');
     url.searchParams.set('prompt', 'consent');
+    url.searchParams.set('state', state);
 
     return res.redirect(url.toString());
   }
@@ -31,9 +48,18 @@ export class OAuthController {
   @Get('google/redirect')
   async googleAuthRedirect(
     @Query('code') code: string,
+    @Query('state') state: string,
     @Res({ passthrough: true }) res: Response,
     @Req() req: Request,
   ) {
+    const savedState = state
+      ? await this.redis.getdel(`oauth:google:state:${state}`)
+      : null;
+
+    if (savedState !== '1') {
+      throw new UnauthorizedException('Invalid or expired OAuth state');
+    }
+
     const tokens = await this.exchangeCodeForTokens(code);
 
     const userInfo = await this.getGoogleUser(tokens.access_token);
