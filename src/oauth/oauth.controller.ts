@@ -3,14 +3,12 @@ import { Response, Request } from 'express';
 import axios from 'axios';
 import {
   CALLBACK_URL,
-  MOBILE_REDIRECT_URI,
   WEB_REDIRECT_URI,
   accessTokenOptions,
   refreshTokenOptions,
   twoFATokenOptions,
 } from '../utils/constants';
 import { OAuthService, LoginResult } from './oauth.service';
-import { Platform } from '../decorators/platform.decorator';
 
 @Controller('oauth')
 export class OAuthController {
@@ -34,7 +32,6 @@ export class OAuthController {
   async googleAuthRedirect(
     @Query('code') code: string,
     @Res({ passthrough: true }) res: Response,
-    @Platform() platform: 'web' | 'mobile',
     @Req() req: Request,
   ) {
     const tokens = await this.exchangeCodeForTokens(code);
@@ -43,8 +40,7 @@ export class OAuthController {
 
     const result: LoginResult = await this.oauthService.fn(userInfo, req);
 
-    const REDIRECT_URI =
-      platform === 'web' ? WEB_REDIRECT_URI : MOBILE_REDIRECT_URI;
+    const REDIRECT_URI = WEB_REDIRECT_URI;
 
     if ('_2fa_token' in result) {
       const redirectUrl = new URL(
@@ -56,18 +52,10 @@ export class OAuthController {
 
     const { access_token, refresh_token } = result;
 
-    if (platform === 'web') {
-      res.cookie('access_token', access_token, accessTokenOptions);
-      res.cookie('refresh_token', refresh_token, refreshTokenOptions);
+    res.cookie('access_token', access_token, accessTokenOptions);
+    res.cookie('refresh_token', refresh_token, refreshTokenOptions);
 
-      return res.redirect(REDIRECT_URI);
-    }
-
-    return {
-      message: 'Login successful',
-      access_token,
-      refresh_token,
-    };
+    return res.redirect(REDIRECT_URI);
   }
 
   private async exchangeCodeForTokens(code: string) {
