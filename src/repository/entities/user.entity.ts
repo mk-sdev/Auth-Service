@@ -84,13 +84,8 @@ export class User {
   @Column({ name: 'deletion_scheduled_at', type: 'bigint', nullable: true })
   deletionScheduledAt?: number | null;
 
-  // sekret TOTP po potwierdzeniu 2FA
   @Column({ name: "otp_secret", type: "text", nullable: true })
   otpSecret?: string;
-
-  // tymczasowy sekret przy setupie 2FA
-  @Column({ name: "otp_temp_secret", type: "text", nullable: true })
-  otpTempSecret?: string;
 
   @Column({ name: "is_2fa_enabled", type: "boolean", default: false })
   isTwoFactorEnabled?: boolean;
