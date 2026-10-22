@@ -33,7 +33,7 @@ export class HashService {
 
   async verify(hash: string, preimage: string): Promise<boolean> {
     const pepper = process.env.PEPPER;
-    preimage = process.env.PEPPER ? preimage + process.env.PEPPER : preimage;
-    return argon2.verify(hash, preimage + pepper);
+    const candidate = pepper ? preimage + pepper : preimage;
+    return argon2.verify(hash, candidate);
   }
 }
