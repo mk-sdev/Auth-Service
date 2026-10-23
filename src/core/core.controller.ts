@@ -23,7 +23,7 @@ import { ChangePasswordDto } from '../dtos/change-password.dto';
 import { LoginDto } from '../dtos/login.dto';
 import { JwtGuard } from '../guards/jwt.guard';
 import { AuditInterceptor } from '../utils/audit/audit.interceptor';
-import { HashInterceptor } from '../utils/hash/hash.interceptor';
+import { RequestTimingInterceptor } from '../utils/request-timing.interceptor';
 import { CoreService } from './core.service';
 import { accessTokenOptions, refreshTokenOptions, twoFATokenOptions } from 'src/utils/constants';
 import { Platform } from 'src/decorators/platform.decorator';
@@ -42,7 +42,7 @@ export class CoreController {
   constructor(
     private readonly coreService: CoreService,
     private userCrudRepoService: UserCrudRepoService,
-    
+
   ) { }
 
   @Get('health-check')
@@ -57,7 +57,7 @@ export class CoreController {
 
   @Patch('login')
   @AuditAction('LOGIN')
-  @UseInterceptors(HashInterceptor)
+  @UseInterceptors(RequestTimingInterceptor)
   @HttpCode(HttpStatus.OK)
   async signIn(
     @Body() loginDto: LoginDto,
@@ -92,7 +92,7 @@ export class CoreController {
   }
 
   @Patch('logout')
-  @UseInterceptors(HashInterceptor)
+  @UseInterceptors(RequestTimingInterceptor)
   @HttpCode(HttpStatus.OK)
   @UseGuards(JwtGuard)
   async logout(

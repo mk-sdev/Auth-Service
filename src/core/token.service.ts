@@ -23,6 +23,7 @@ import { InvalidCredentialsException } from '../utils/invalid-credentials.except
 import { MailService } from './mail.service';
 
 const MIN_CHANGE_EMAIL_RESPONSE_MS = 250;
+const MIN_REMIND_PASSWORD_RESPONSE_MS = 75;
 
 @Injectable()
 export class TokenService {
@@ -191,6 +192,7 @@ export class TokenService {
   }
 
   async remindPassword(email: string, message: string, req: Request) {
+    const startedAt = performance.now();
     const { ip, path, method } = createAuditDetails(req);
     const resetToken = randomUUID();
     const passwordResetTokenExpires = Date.now() + password_reset_lifespan;
@@ -230,6 +232,12 @@ export class TokenService {
             });
           });
       });
+    }
+
+    const remainingDelay =
+      MIN_REMIND_PASSWORD_RESPONSE_MS - (performance.now() - startedAt);
+    if (remainingDelay > 0) {
+      await new Promise((resolve) => setTimeout(resolve, remainingDelay));
     }
 
     return { message };

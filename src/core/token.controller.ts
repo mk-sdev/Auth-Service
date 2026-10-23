@@ -24,7 +24,7 @@ import { TokenService } from './token.service';
 import { AuditInterceptor } from '../utils/audit/audit.interceptor';
 import { AuditAction } from '../decorators/audit-action.decorator';
 import { Request } from 'express';
-import { HashInterceptor } from '../utils/hash/hash.interceptor';
+import { RequestTimingInterceptor } from '../utils/request-timing.interceptor';
 
 // * this controller handles mailing-related endpoints
 @Controller()
@@ -36,7 +36,7 @@ import { HashInterceptor } from '../utils/hash/hash.interceptor';
   }),
 )
 export class TokenController {
-  constructor(private readonly mailService: TokenService) {}
+  constructor(private readonly mailService: TokenService) { }
 
   @Post('register')
   @AuditAction('REGISTER')
@@ -57,7 +57,7 @@ export class TokenController {
 
   @Patch('change-email')
   @AuditAction('CHANGE_EMAIL')
-  @UseInterceptors(HashInterceptor)
+  @UseInterceptors(RequestTimingInterceptor)
   @UseGuards(JwtGuard)
   async changeEmail(
     @Id() id: string,
@@ -70,7 +70,7 @@ export class TokenController {
 
     return {
       message:
-        'Visit your new email address to verify the change',
+        'If the email address can be changed, a confirmation message will be sent.',
     };
   }
 
@@ -87,6 +87,7 @@ export class TokenController {
 
   @Patch('remind-password')
   @AuditAction('REMIND_PASSWORD')
+  @UseInterceptors(RequestTimingInterceptor)
   @HttpCode(HttpStatus.OK)
   async remindPassword(@Body() body: EmailDto, @Req() req: Request) {
     const { email } = body;
