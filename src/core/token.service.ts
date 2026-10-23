@@ -1,11 +1,11 @@
 import {
   BadRequestException,
-  ConflictException,
   Injectable,
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { randomUUID } from 'crypto';
+import { performance } from 'node:perf_hooks';
 import { Request } from 'express';
 import { PasswordRepoService } from '../repository/passwordRepo.service';
 import { UserCrudRepoService } from '../repository/userCrudRepo.service';
@@ -19,7 +19,10 @@ import {
   password_reset_lifespan,
 } from '../utils/constants';
 import { HashService } from '../utils/hash/hash.service';
+import { InvalidCredentialsException } from '../utils/invalid-credentials.exception';
 import { MailService } from './mail.service';
+
+const MIN_CHANGE_EMAIL_RESPONSE_MS = 250;
 
 @Injectable()
 export class TokenService {
@@ -103,49 +106,68 @@ export class TokenService {
         path,
         method,
       });
-      throw new NotFoundException(
-        'User with the given email address doesn`t exist',
-      );
+      throw new InvalidCredentialsException();
     }
 
-    const isPasswordValid: boolean = await this.hashService.verify(
-      user.password!,
-      password,
-    );
-    if (!isPasswordValid) {
+    if (
+      !user.password ||
+      !(await this.hashService.verify(user.password, password))
+    ) {
       this.auditLogger.warn(id, 'CHANGE_EMAIL_INVALID_PASSWORD', {
         ip,
         path,
         method,
       });
-      throw new UnauthorizedException('Incorrect password');
+      throw new InvalidCredentialsException();
     }
 
+    const startedAt = performance.now();
     const emailExists = await this.userCrudRepoService.findOneByEmail(newEmail);
     if (emailExists) {
-      throw new ConflictException('This email is already in use!');
+      this.auditLogger.warn(id, 'CHANGE_EMAIL_TARGET_ALREADY_IN_USE', {
+        ip,
+        path,
+        method,
+      });
+    } else {
+      const verificationToken = randomUUID();
+      const emailChangeTokenExpires = Date.now() + email_change_lifespan;
+
+      await this.verificationRepoService.markEmailChangePending(
+        id,
+        newEmail,
+        verificationToken,
+        emailChangeTokenExpires,
+      );
+
+      setImmediate(() => {
+        void this.mailService
+          .sendMailWithToken(
+            newEmail,
+            verificationToken,
+            'Confirm email address change',
+            'confirm email change',
+            {},
+            FRONTEND_URL,
+            'token',
+            '/verify-email',
+          )
+          .catch((error: unknown) => {
+            this.auditLogger.warn('system', 'EMAIL_CHANGE_CONFIRMATION_FAILED', {
+              ip,
+              path,
+              method,
+              error: error instanceof Error ? error.message : String(error),
+            });
+          });
+      });
     }
 
-    const verificationToken = randomUUID();
-    const emailChangeTokenExpires = Date.now() + email_change_lifespan;
-
-    await this.verificationRepoService.markEmailChangePending(
-      id,
-      newEmail,
-      verificationToken,
-      emailChangeTokenExpires,
-    );
-
-    await this.mailService.sendMailWithToken(
-      newEmail,
-      verificationToken,
-      'Confirm email address change',
-      'confirm email change',
-      {},
-      FRONTEND_URL,
-      'token',
-      '/verify-email',
-    );
+    const remainingDelay =
+      MIN_CHANGE_EMAIL_RESPONSE_MS - (performance.now() - startedAt);
+    if (remainingDelay > 0) {
+      await new Promise((resolve) => setTimeout(resolve, remainingDelay));
+    }
   }
 
   async verifyEmail(token: string): Promise<void> {

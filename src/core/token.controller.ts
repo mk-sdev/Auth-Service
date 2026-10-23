@@ -24,6 +24,7 @@ import { TokenService } from './token.service';
 import { AuditInterceptor } from '../utils/audit/audit.interceptor';
 import { AuditAction } from '../decorators/audit-action.decorator';
 import { Request } from 'express';
+import { HashInterceptor } from '../utils/hash/hash.interceptor';
 
 // * this controller handles mailing-related endpoints
 @Controller()
@@ -56,6 +57,7 @@ export class TokenController {
 
   @Patch('change-email')
   @AuditAction('CHANGE_EMAIL')
+  @UseInterceptors(HashInterceptor)
   @UseGuards(JwtGuard)
   async changeEmail(
     @Id() id: string,
@@ -66,7 +68,10 @@ export class TokenController {
 
     await this.mailService.changeEmail(id, newEmail, password, req);
 
-    return { message: 'Email address has been changed successfully' };
+    return {
+      message:
+        'Visit your new email address to verify the change',
+    };
   }
 
   @Get('verify-email')
