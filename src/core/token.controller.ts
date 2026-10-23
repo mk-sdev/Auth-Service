@@ -40,10 +40,11 @@ export class TokenController {
 
   @Post('register')
   @AuditAction('REGISTER')
+  @UseInterceptors(RequestTimingInterceptor)
   @HttpCode(HttpStatus.CREATED)
-  async register(@Body() registerDto: RegisterDto) {
+  async register(@Body() registerDto: RegisterDto, @Req() req: Request) {
     const message = 'Verification link has been sent to your email address';
-    await this.mailService.register(registerDto.email, registerDto.password);
+    await this.mailService.register(registerDto.email, registerDto.password, req);
     return { message };
   }
 

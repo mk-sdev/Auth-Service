@@ -36,45 +36,61 @@ export class TokenService {
     private readonly mailService: MailService,
   ) {}
 
-  async register(email: string, password: string): Promise<void> {
+  async register(email: string, password: string, req?: Request): Promise<void> {
+    const { ip, path, method } = req
+      ? createAuditDetails(req)
+      : { ip: 'unknown', path: '/register', method: 'POST' };
     const existingUser = await this.userCrudRepoService.findOneByEmail(email);
+    // Hash for every request so an existing verified account does not skip
+    // the expensive password-hashing work performed for other registrations.
+    const hashedPassword = await this.hashService.hash(password);
     if (existingUser && existingUser.isVerified) {
       // do not do anything to not to reveal the account exists in the db
-      // throw new ConflictException('Email already in use');
-      return;
-    }
+    } else {
+      const verificationToken = randomUUID();
+      const verificationTokenExpires =
+        Date.now() + account_verification_lifespan;
 
-    const hashedPassword = await this.hashService.hash(password);
-    const verificationToken = randomUUID();
-    const verificationTokenExpires = Date.now() + account_verification_lifespan;
+      if (existingUser)
+        await this.verificationRepoService.setNewVerificationToken(
+          email,
+          hashedPassword,
+          verificationToken,
+          verificationTokenExpires,
+        );
+      else
+        await this.userCrudRepoService.insertOne({
+          email,
+          password: hashedPassword,
+          verificationToken,
+          verificationTokenExpires,
+        });
 
-    if (existingUser && !existingUser.isVerified)
-      // set new verification token and its expiration date
-      await this.verificationRepoService.setNewVerificationToken(
-        email,
-        hashedPassword, // in case if the user gave different password than for the first time
-        verificationToken,
-        verificationTokenExpires,
-      );
-    else
-      // Add the user to the db
-      await this.userCrudRepoService.insertOne({
-        email,
-        password: hashedPassword,
-        verificationToken,
-        verificationTokenExpires,
+      setImmediate(() => {
+        void Promise.resolve()
+          .then(() =>
+            this.mailService.sendMailWithToken(
+              email,
+              verificationToken,
+              'Activate your account',
+              'verify your account',
+              undefined,
+              FRONTEND_URL,
+              'token',
+              '/verify-account',
+            ),
+          )
+          .catch((error: unknown) => {
+            this.auditLogger.warn('system', 'REGISTRATION_EMAIL_FAILED', {
+              ip,
+              path,
+              method,
+              email,
+              error: error instanceof Error ? error.message : String(error),
+            });
+          });
       });
-
-    await this.mailService.sendMailWithToken(
-      email,
-      verificationToken,
-      'Activate your account',
-      'verify you account',
-      undefined,
-      FRONTEND_URL,
-      'token',
-      '/verify-account',
-    );
+    }
   }
 
   // verifies a registration token
