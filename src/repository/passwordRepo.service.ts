@@ -67,13 +67,14 @@ export class PasswordRepoService implements IPassword {
     email: string,
     resetToken: string,
     passwordResetTokenExpires: number,
-  ): Promise<void> {
-    await this.userRepository.update(
+  ): Promise<number> {
+    const result = await this.userRepository.update(
       { email },
       {
         passwordResetToken: resetToken,
         passwordResetTokenExpires,
       },
     );
+    return result.affected ?? 0;
   }
 }

@@ -192,41 +192,47 @@ export class TokenService {
 
   async remindPassword(email: string, message: string, req: Request) {
     const { ip, path, method } = createAuditDetails(req);
+    const resetToken = randomUUID();
+    const passwordResetTokenExpires = Date.now() + password_reset_lifespan;
+    const updatedUsers = await this.passwordRepoService.remindPassword(
+      email,
+      resetToken,
+      passwordResetTokenExpires,
+    );
 
-    const user = await this.userCrudRepoService.findOneByEmail(email);
-
-    if (!user) {
+    if (updatedUsers === 0) {
       this.auditLogger.warn('anonymous', 'REMIND_PASSWORD_USER_NOT_FOUND', {
         ip,
         path,
         method,
         email,
       });
-      // Do not do anything, in order to not to reveal the account exists in the database
-      return {
-        message,
-      };
+    } else {
+      setImmediate(() => {
+        void this.mailService
+          .sendMailWithToken(
+            email,
+            resetToken,
+            'Password reset instruction',
+            'reset your password',
+            {},
+            FRONTEND_URL,
+            'token',
+            '/reset-password',
+          )
+          .catch((error: unknown) => {
+            this.auditLogger.warn('system', 'PASSWORD_RESET_EMAIL_FAILED', {
+              ip,
+              path,
+              method,
+              email,
+              error: error instanceof Error ? error.message : String(error),
+            });
+          });
+      });
     }
 
-    const resetToken = randomUUID();
-    const passwordResetTokenExpires = Date.now() + password_reset_lifespan;
-
-    await this.passwordRepoService.remindPassword(
-      email,
-      resetToken,
-      passwordResetTokenExpires,
-    );
-
-    await this.mailService.sendMailWithToken(
-      email,
-      resetToken,
-      'Password reset instruction',
-      'reset your password',
-      {},
-      FRONTEND_URL,
-      'token',
-      '/reset-password',
-    );
+    return { message };
   }
 
   async resetPassword(token: string, newPassword: string) {

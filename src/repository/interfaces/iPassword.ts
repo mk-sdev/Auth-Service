@@ -12,5 +12,5 @@ export interface IPassword {
     email: string,
     resetToken: string,
     passwordResetTokenExpires: number,
-  ): Promise<void>;
+  ): Promise<number>;
 }
