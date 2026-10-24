@@ -9,7 +9,7 @@ export interface IUserCrud {
   getUsers(
     n: number,
     i: number,
-  ): Promise<Pick<User, 'email'>[] | null>;
+  ): Promise<{ users: Pick<User, 'email'>[]; total: number }>;
   insertOne({
     email,
     password,

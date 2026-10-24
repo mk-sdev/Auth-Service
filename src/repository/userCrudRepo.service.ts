@@ -79,12 +79,14 @@ export class UserCrudRepoService implements IUserCrud {
     return await this.userRepository.find({ select: ['email'] });
   }
 
-  async getUsers(n: number, i: number): Promise<Pick<User, 'email'>[]> {
-    return await this.userRepository.find({
+  async getUsers(n: number, i: number): Promise<{ users: Pick<User, 'email'>[]; total: number }> {
+    const [users, total] = await this.userRepository.findAndCount({
       select: ['email'],
       skip: n * i, // skip n*i records
       take: n, // take n records
+      order: { _id: 'ASC' },
     });
+    return { users, total };
   }
 
   async insertOne({

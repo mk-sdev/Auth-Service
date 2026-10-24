@@ -156,19 +156,22 @@ export class ProtectedController {
   @Roles(Role.ADMIN)
   @Get('users')
   @UseGuards(JwtGuard, RolesGuard)
-  async getAllUsers() {
-    const users = await this.userCrudRepoService.getAllUsers();
-    return users;
-  }
-
-  @Roles(Role.ADMIN)
-  @Get('users-paginated')
-  @UseGuards(JwtGuard, RolesGuard)
   async getUsers(
-    @Query('n', new DefaultValuePipe(10), ParseIntPipe) n: number,
-    @Query('i', new DefaultValuePipe(0), ParseIntPipe) i: number,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+    @Query('limit', new DefaultValuePipe(50), ParseIntPipe) limit: number,
   ) {
-    const users = await this.userCrudRepoService.getUsers(n, i);
-    return users;
+    const safePage = Math.max(1, page);
+    const safeLimit = Math.min(100, Math.max(1, limit));
+    const { users, total } = await this.userCrudRepoService.getUsers(
+      safeLimit,
+      safePage - 1,
+    );
+    return {
+      users,
+      total,
+      page: safePage,
+      limit: safeLimit,
+      totalPages: Math.ceil(total / safeLimit),
+    };
   }
 }
