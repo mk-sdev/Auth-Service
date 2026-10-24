@@ -22,6 +22,7 @@ import { Roles } from '../decorators/roles.decorator';
 import { JwtGuard } from '../guards/jwt.guard';
 import { RolesGuard } from '../guards/roles.guard';
 import { LoginDto } from '../dtos/login.dto';
+import { AdminLoginDto } from '../dtos/admin-login.dto';
 import { SafeUserDto } from '../dtos/safe-user.dto';
 import { HashService } from '../utils/hash/hash.service';
 import { PasswordRepoService } from '../repository/passwordRepo.service';
@@ -34,6 +35,7 @@ import { CoreService } from 'src/core/core.service';
 import { Request, Response } from 'express';
 import { accessTokenOptions, refreshTokenOptions } from 'src/utils/constants';
 import { User } from 'src/repository/entities/user.entity';
+import { TurnstileService } from './turnstile.service';
 // import { UserRole } from 'src/repository/pg/user-role.entity';
 // import { extractRoles } from 'src/utils/extractRoles';
 
@@ -52,16 +54,18 @@ export class ProtectedController {
     private readonly userCrudRepoService: UserCrudRepoService,
     private readonly hashService: HashService,
     private readonly coreService: CoreService,
+    private readonly turnstileService: TurnstileService,
   ) { }
 
   @Roles(Role.ADMIN)
   @AuditAction('LOGIN', 'admin')
   @Patch('login')
   async login(
-    @Body() loginDto: LoginDto,
+    @Body() loginDto: AdminLoginDto,
     @Res({ passthrough: true }) response: Response,
     @Req() req: Request,
   ) {
+    await this.turnstileService.verify(loginDto.captchaToken, req);
     const result = await this.coreService.login(
       loginDto.email,
       req,

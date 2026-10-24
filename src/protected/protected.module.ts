@@ -5,6 +5,7 @@ import { AuditModule } from '../utils/audit/audit.module';
 import { TokensModule } from '../utils/tokens.module';
 import { ProtectedController } from './protected.controller';
 import { CoreModule } from 'src/core/core.module';
+import { TurnstileService } from './turnstile.service';
 
 @Module({
   imports: [
@@ -15,5 +16,6 @@ import { CoreModule } from 'src/core/core.module';
     CoreModule,
   ],
   controllers: [ProtectedController],
+  providers: [TurnstileService],
 })
 export class ProtectedModule {}

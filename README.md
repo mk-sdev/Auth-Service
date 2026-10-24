@@ -38,6 +38,8 @@ NODE_ENV=development # or production or test
 
 PEPPER=
 
+TURNSTILE_SECRET_KEY= # CAPTCHA
+
 JWT_ACCESS_SECRET=
 JWT_REFRESH_SECRET=
 
