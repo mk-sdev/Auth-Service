@@ -33,7 +33,11 @@ import { AuditInterceptor } from '../utils/audit/audit.interceptor';
 import { AuditAction } from '../decorators/audit-action.decorator';
 import { CoreService } from 'src/core/core.service';
 import { Request, Response } from 'express';
-import { accessTokenOptions, refreshTokenOptions } from 'src/utils/constants';
+import {
+  accessTokenOptions,
+  refreshTokenOptions,
+  twoFATokenOptions,
+} from 'src/utils/constants';
 import { User } from 'src/repository/entities/user.entity';
 import { TurnstileService } from './turnstile.service';
 // import { UserRole } from 'src/repository/pg/user-role.entity';
@@ -73,7 +77,8 @@ export class ProtectedController {
     );
 
     if ('_2fa_token' in result) {
-      return result;
+      response.cookie('2fa_token', result._2fa_token, twoFATokenOptions);
+      return { two_factor_required: true };
     }
 
     const { access_token, refresh_token } = result;
