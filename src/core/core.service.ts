@@ -136,6 +136,13 @@ export class CoreService implements OnModuleInit {
         _2fa_token,
       };
     }
+
+    if (user.isDeletionPending) {
+      await this.userCrudRepoService.cancelScheduledDeletion(
+        user._id as string,
+      );
+    }
+
     //* if the user is found and the password matches, generate a JWT token and send it back
     const userWithRoles = await this.userCrudRepoService.findOneByEmail(email);
     const payload: NewPayload = {
@@ -155,12 +162,6 @@ export class CoreService implements OnModuleInit {
     );
 
     await this.tokenRepoService.trimRefreshTokens(String(user._id));
-
-    if (user.isDeletionPending) {
-      await this.userCrudRepoService.cancelScheduledDeletion(
-        user._id as string,
-      );
-    }
 
     await this.redis.del(key);
 
