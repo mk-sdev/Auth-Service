@@ -34,7 +34,7 @@ export class TokenService {
     private readonly hashService: HashService,
     private readonly auditLogger: AuditLoggerService,
     private readonly mailService: MailService,
-  ) {}
+  ) { }
 
   async register(email: string, password: string, req?: Request): Promise<void> {
     const { ip, path, method } = req
@@ -137,6 +137,9 @@ export class TokenService {
       });
       throw new InvalidCredentialsException();
     }
+
+    if (user.email === newEmail)
+      throw new BadRequestException('New email cannot be the same as current email');
 
     const startedAt = performance.now();
     const emailExists = await this.userCrudRepoService.findOneByEmail(newEmail);
