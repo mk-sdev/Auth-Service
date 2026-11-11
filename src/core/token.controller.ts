@@ -26,7 +26,11 @@ import { AuditAction } from '../decorators/audit-action.decorator';
 import { Request } from 'express';
 import { RequestTimingInterceptor } from '../utils/request-timing.interceptor';
 
-// * this controller handles mailing-related endpoints
+/*
+ This controller contains endpoints that receive or create tokens, 
+ such as verification tokens, email change tokens,or password reset tokens.
+ These tokens are randomly generated strings of characters, not JWTs.
+*/
 @Controller()
 @UseInterceptors(AuditInterceptor)
 @UsePipes(
@@ -36,7 +40,7 @@ import { RequestTimingInterceptor } from '../utils/request-timing.interceptor';
   }),
 )
 export class TokenController {
-  constructor(private readonly mailService: TokenService) { }
+  constructor(private readonly tokenService: TokenService) { }
 
   @Post('register')
   @AuditAction('REGISTER')
@@ -44,13 +48,13 @@ export class TokenController {
   @HttpCode(HttpStatus.CREATED)
   async register(@Body() registerDto: RegisterDto, @Req() req: Request) {
     const message = 'Verification link has been sent to your email address';
-    await this.mailService.register(registerDto.email, registerDto.password, req);
+    await this.tokenService.register(registerDto.email, registerDto.password, req);
     return { message };
   }
 
   @Get('verify-account')
   async verify(@Query('token') token: string) {
-    await this.mailService.verifyToken(token);
+    await this.tokenService.verifyToken(token);
     return {
       message: 'The account has been verified successfully',
     };
@@ -67,7 +71,7 @@ export class TokenController {
   ) {
     const { newEmail, password } = body;
 
-    await this.mailService.changeEmail(id, newEmail, password, req);
+    await this.tokenService.changeEmail(id, newEmail, password, req);
 
     return {
       message:
@@ -81,7 +85,7 @@ export class TokenController {
       throw new BadRequestException('Verification token is required');
     }
 
-    await this.mailService.verifyEmail(token);
+    await this.tokenService.verifyEmail(token);
 
     return { message: 'Email has been successfully verified and changed' };
   }
@@ -96,7 +100,7 @@ export class TokenController {
     const message =
       'Password reset instruction has been sent to the email address provided';
 
-    await this.mailService.remindPassword(email, message, req);
+    await this.tokenService.remindPassword(email, message, req);
     return {
       message,
     };
@@ -105,6 +109,6 @@ export class TokenController {
   @Patch('reset-password')
   @AuditAction('RESET_PASSWORD')
   async resetPassword(@Body() body: ResetPasswordDto) {
-    return this.mailService.resetPassword(body.token, body.newPassword);
+    return this.tokenService.resetPassword(body.token, body.newPassword);
   }
 }
