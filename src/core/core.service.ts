@@ -14,12 +14,10 @@ import { UserCrudRepoService } from '../repository/userCrudRepo.service';
 import { createAuditDetails } from '../utils/audit/audit-utils';
 import { AuditLoggerService } from '../utils/audit/audit.service';
 import { account_deletion_lifespan } from '../utils/constants';
-// import { extractRoles } from '../utils/extractRoles';
 import { HashService } from '../utils/hash/hash.service';
 import { JwtPayload, Role } from '../utils/interfaces';
 import { InvalidCredentialsException } from '../utils/invalid-credentials.exception';
 import { MailService } from './mail.service';
-// import { TwoFactorService } from './2fa.service';
 type NewPayload = Omit<JwtPayload, 'iat' | 'exp'>;
 
 @Injectable()
@@ -40,7 +38,6 @@ export class CoreService implements OnModuleInit {
     @Inject('REDIS_CLIENT') private readonly redis: Redis,
     private readonly auditLogger: AuditLoggerService,
     private readonly mailService: MailService,
-    // private readonly twoFactorService: TwoFactorService,
   ) { }
 
   async onModuleInit(): Promise<void> {
@@ -72,7 +69,7 @@ export class CoreService implements OnModuleInit {
 
     const { ip, path, method } = createAuditDetails(req);
 
-    if (attempts > 5) {//TODO: change to 5
+    if (attempts > 5) {
       this.auditLogger.warn('anonymous', 'LOGIN_RATE_LIMIT_EXCEEDED', {
         ip,
         path,
@@ -128,7 +125,7 @@ export class CoreService implements OnModuleInit {
 
     if (user.isTwoFactorEnabled) {
       console.log(user.isTwoFactorEnabled)
-      // await this.twoFactorService.generateOtp(user._id); // np. 6 cyfr
+
       const _2fa_token = await this.twoFATokenService.signAsync(
         { sub: user._id, type: '2fa' },
       );
@@ -336,7 +333,6 @@ export class CoreService implements OnModuleInit {
   async markForDeletion(id: string, password: string, req: Request) {
     const { ip, path, method } = createAuditDetails(req);
 
-    // TODO: add a cron job for deleting accounts after the deletionScheduledAt time
     const user = await this.userCrudRepoService.findOne(id);
     if (!user) {
       this.auditLogger.warn(id, 'DELETE_ACCOUNT_USER_NOT_FOUND', {
@@ -344,9 +340,7 @@ export class CoreService implements OnModuleInit {
         path,
         method,
       });
-      //FIXME: should the app say if the user doesn't exist?
       throw new ConflictException('The user of the given ID doesn`t exist');
-      //return;
     }
 
     if (user.password) {
