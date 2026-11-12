@@ -1,4 +1,4 @@
-import { ExecutionContext, UnauthorizedException } from '@nestjs/common';
+import { ExecutionContext, ForbiddenException, UnauthorizedException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { RolesGuard } from './roles.guard';
 import { UserRequest, Role } from '../utils/interfaces';
@@ -49,20 +49,20 @@ describe('RolesGuard', () => {
 
     const context = mockExecutionContext([Role.USER]);
 
-    expect(() => guard.canActivate(context)).toThrow(UnauthorizedException);
+    expect(() => guard.canActivate(context)).toThrow(ForbiddenException);
   });
 
   it('should deny access if user has no roles', () => {
     jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue([Role.ADMIN]);
 
     const context = mockExecutionContext([]);
-    expect(() => guard.canActivate(context)).toThrow(UnauthorizedException);
+    expect(() => guard.canActivate(context)).toThrow(ForbiddenException);
   });
 
   it('should deny access if user is undefined', () => {
     jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue([Role.ADMIN]);
 
     const context = mockExecutionContext(undefined);
-    expect(() => guard.canActivate(context)).toThrow(UnauthorizedException);
+    expect(() => guard.canActivate(context)).toThrow(ForbiddenException);
   });
 });
