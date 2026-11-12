@@ -1,5 +1,5 @@
 import os
-from datetime import datetime, timezone
+import time
 import psycopg2
 
 def delete_expired_tokens():
@@ -19,13 +19,15 @@ def delete_expired_tokens():
     )
     cur = conn.cursor()
 
-    now = datetime.now(timezone.utc)
+    now_ms = int(time.time() * 1000)
 
     query = """
     DELETE FROM users
-    WHERE verification_token_expires < %s
+    WHERE is_verified = FALSE
+      AND verification_token_expires IS NOT NULL
+      AND verification_token_expires < %s
     """
-    cur.execute(query, (now,))
+    cur.execute(query, (now_ms,))
     deleted_count = cur.rowcount
 
     conn.commit()

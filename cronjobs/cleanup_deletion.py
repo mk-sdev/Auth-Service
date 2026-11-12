@@ -1,8 +1,8 @@
 import os
-from datetime import datetime, timezone
+import time
 import psycopg2
 
-def cleanup_email_change_tokens():
+def cleanup_delete_accounts():
     pg_host = os.getenv('PG_HOST', 'localhost')
     pg_port = os.getenv('PG_PORT', '5432')
     pg_dbname = os.getenv('PG_DBNAME', 'imagehub')
@@ -18,24 +18,23 @@ def cleanup_email_change_tokens():
     )
     cur = conn.cursor()
 
-    now = datetime.now(timezone.utc)
+    now_ms = int(time.time() * 1000)
 
     query = """
-    UPDATE users
-    SET
-        isDeletionPending = FALSE,
-        deletionScheduledAt = NULL
-    WHERE deletionScheduledAt < %s
+    DELETE FROM users
+    WHERE is_deletion_pending = TRUE
+      AND deletion_scheduled_at IS NOT NULL
+      AND deletion_scheduled_at < %s
     """
 
-    cur.execute(query, (now,))
-    updated_count = cur.rowcount
+    cur.execute(query, (now_ms,))
+    deleted_count = cur.rowcount
 
     conn.commit()
     cur.close()
     conn.close()
 
-    print(f'{updated_count} records have been updated')
+    print(f'{deleted_count} accounts have been deleted')
 
 if __name__ == "__main__":
-    cleanup_email_change_tokens()
+    cleanup_delete_accounts()

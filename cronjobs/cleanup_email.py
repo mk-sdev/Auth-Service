@@ -1,5 +1,5 @@
 import os
-from datetime import datetime, timezone
+import time
 import psycopg2
 
 def cleanup_email_change_tokens():
@@ -18,7 +18,7 @@ def cleanup_email_change_tokens():
     )
     cur = conn.cursor()
 
-    now = datetime.now(timezone.utc)
+    now_ms = int(time.time() * 1000)
 
     query = """
     UPDATE users
@@ -26,10 +26,11 @@ def cleanup_email_change_tokens():
         pending_email = NULL,
         email_change_token = NULL,
         email_change_token_expires = NULL
-    WHERE email_change_token_expires < %s
+    WHERE email_change_token_expires IS NOT NULL
+      AND email_change_token_expires < %s
     """
 
-    cur.execute(query, (now,))
+    cur.execute(query, (now_ms,))
     updated_count = cur.rowcount
 
     conn.commit()
