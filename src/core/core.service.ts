@@ -1,5 +1,7 @@
 import {
   ConflictException,
+  HttpException,
+  HttpStatus,
   Inject,
   Injectable,
   OnModuleInit,
@@ -78,8 +80,9 @@ export class CoreService implements OnModuleInit {
         attempts,
       });
       await this.mailService.sendSuspiciousLoginEmail(email, ip);
-      throw new UnauthorizedException(
+      throw new HttpException(
         'Too many login attempts. Try again later.',
+        HttpStatus.TOO_MANY_REQUESTS,
       );
     }
 
