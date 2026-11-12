@@ -185,7 +185,7 @@ export class UserCrudRepoService implements IUserCrud {
     const user = await this.userRepository.findOne({ where: { _id: userId } });
     if (!user) return;
 
-    user.isDeletionPending = null;
+    user.isDeletionPending = false;
     user.deletionScheduledAt = null;
 
     await this.userRepository.save(user);
