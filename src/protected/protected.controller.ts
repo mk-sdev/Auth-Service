@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   DefaultValuePipe,
+  Delete,
   Get,
   HttpCode,
   HttpStatus,
@@ -151,7 +152,7 @@ export class ProtectedController {
   }
 
   @Roles(Role.ADMIN)
-  @Patch('user/:id/logout')
+  @Delete('user/:id/logout')
   @HttpCode(HttpStatus.OK)
   @UseGuards(JwtGuard, RolesGuard)
   async logout(@Param('id') id: string): Promise<void> {

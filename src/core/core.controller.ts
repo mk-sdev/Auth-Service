@@ -91,7 +91,7 @@ export class CoreController {
     return { message: 'Login successful', refresh_token };
   }
 
-  @Patch('logout')
+  @Delete('logout')
   @UseInterceptors(RequestTimingInterceptor)
   @HttpCode(HttpStatus.OK)
   @UseGuards(JwtGuard)
@@ -130,7 +130,7 @@ export class CoreController {
     return { message: 'Logout successful' };
   }
 
-  @Patch('global-logout')
+  @Delete('global-logout')
   @HttpCode(HttpStatus.OK)
   @UseGuards(JwtGuard)
   async globalLogout(
