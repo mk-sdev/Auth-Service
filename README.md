@@ -7,7 +7,7 @@ An authentication & authorization microservice designed to integrate easily into
 
 - **High security standards** - Passwords hashed with Argon2, Redis-powered rate limiting, and rigorous testing ensure robust protection against brute-force and other common attacks.
 
-- **Client-agnostic** - Works seamlessly with both web and mobile clients by handling JWTs from cookies as well as HTTP headers.
+- **Browser sessions** - Stores JWTs in HTTP-only cookies for browser clients.
 
 - **OAuth 2.0 integration** - Let the users sign up effortlessly thanks to Google provider.
 

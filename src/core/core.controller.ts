@@ -3,7 +3,6 @@ import {
   Controller,
   Delete,
   Get,
-  Headers,
   HttpCode,
   HttpStatus,
   NotFoundException,
@@ -26,7 +25,6 @@ import { AuditInterceptor } from '../utils/audit/audit.interceptor';
 import { RequestTimingInterceptor } from '../utils/request-timing.interceptor';
 import { CoreService } from './core.service';
 import { accessTokenOptions, refreshTokenOptions, twoFATokenOptions } from 'src/utils/constants';
-import { Platform } from 'src/decorators/platform.decorator';
 import { UserCrudRepoService } from 'src/repository/userCrudRepo.service';
 import { SetPasswordDto } from 'src/dtos/set-password.dto';
 
@@ -63,7 +61,6 @@ export class CoreController {
     @Body() loginDto: LoginDto,
     @Res({ passthrough: true }) response: Response,
     @Req() req: Request,
-    @Platform() platform: 'web' | 'mobile',
   ) {
     const result = await this.coreService.login(
       loginDto.email,
@@ -78,17 +75,9 @@ export class CoreController {
 
     const { access_token, refresh_token } = result;
 
-    // cookies
-    if (platform === 'web') {
-      response.cookie('access_token', access_token, accessTokenOptions);
-      response.cookie('refresh_token', refresh_token, refreshTokenOptions);
-      return { message: 'Login successful' };
-    }
-
-    // headers
-    response.setHeader('Authorization', `Bearer ${access_token}`);
-
-    return { message: 'Login successful', refresh_token };
+    response.cookie('access_token', access_token, accessTokenOptions);
+    response.cookie('refresh_token', refresh_token, refreshTokenOptions);
+    return { message: 'Login successful' };
   }
 
   @Delete('logout')
@@ -98,32 +87,11 @@ export class CoreController {
   async logout(
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
-    @Platform() platform: 'web' | 'mobile',
-    @Body() body?: { refresh_token: string },
   ) {
-    let refreshToken: string;
+    const refreshToken = req.cookies['refresh_token'] as string;
 
-    if (platform === 'web') {
-      refreshToken = req.cookies['refresh_token'] as string;
-    } else {
-      refreshToken = body!.refresh_token;
-    }
-
-    // clear cookies only for browsers
-    if (platform === 'web') {
-      res.clearCookie('access_token', {
-        httpOnly: true,
-        secure: false,
-        sameSite: 'lax',
-        path: '/',
-      });
-      res.clearCookie('refresh_token', {
-        httpOnly: true,
-        secure: false,
-        sameSite: 'lax',
-        path: '/',
-      });
-    }
+    res.clearCookie('access_token', { httpOnly: true, secure: false, sameSite: 'lax', path: '/' });
+    res.clearCookie('refresh_token', { httpOnly: true, secure: false, sameSite: 'lax', path: '/' });
 
     await this.coreService.logout(refreshToken);
 
@@ -135,61 +103,34 @@ export class CoreController {
   @UseGuards(JwtGuard)
   async globalLogout(
     @Id() id: string,
-    @Platform() platform: 'web' | 'mobile',
     @Res({ passthrough: true }) res: Response,
   ) {
-    if (platform === 'web') {
-      res.clearCookie('access_token', {
-        httpOnly: true,
-        secure: false,
-        sameSite: 'lax',
-        path: '/',
-      });
-      res.clearCookie('refresh_token', {
-        httpOnly: true,
-        secure: false,
-        sameSite: 'lax',
-        path: '/',
-      });
-    }
+    res.clearCookie('access_token', { httpOnly: true, secure: false, sameSite: 'lax', path: '/' });
+    res.clearCookie('refresh_token', { httpOnly: true, secure: false, sameSite: 'lax', path: '/' });
     await this.coreService.globalLogout(id);
   }
 
   @Patch('refresh')
   @HttpCode(HttpStatus.OK)
   async refresh(
-    @Platform() platform: 'web' | 'mobile',
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
-    @Body() body?: { refresh_token?: string },
   ) {
-    let refreshToken: string | undefined;
-
-    if (platform === 'web')
-      refreshToken = req.cookies['refresh_token'] as string | undefined;
-    else refreshToken = body?.refresh_token;
+    const refreshToken = req.cookies?.['refresh_token'] as string | undefined;
 
     if (!refreshToken)
       throw new UnauthorizedException('No refresh token provided');
 
     const refreshed = await this.coreService.refreshTokens(refreshToken);
 
-    if (platform === 'web') {
-      res.cookie('access_token', refreshed.access_token, accessTokenOptions);
-      res.cookie('refresh_token', refreshed.refresh_token, refreshTokenOptions);
-      return { message: 'Refresh successful' };
-    }
-
-    return {
-      message: 'Refresh successful',
-      access_token: refreshed.access_token,
-      refresh_token: refreshed.refresh_token,
-    };
+    res.cookie('access_token', refreshed.access_token, accessTokenOptions);
+    res.cookie('refresh_token', refreshed.refresh_token, refreshTokenOptions);
+    return { message: 'Refresh successful' };
   }
 
   /**
    *
-   * @description On mobile, if the app wants to know i a user is logged in, it simply checks if the secure storage contains a valid access token. But browsers don't have an access to cookies if the are httpOnly. Therefore browser needs to ask the backend to check if the user is logged in.
+   * @description Checks whether the browser session has a valid access token cookie.
    */
   @Get('is-logged') // * cookies only
   @UseGuards(JwtGuard)
