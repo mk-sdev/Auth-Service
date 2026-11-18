@@ -3,6 +3,7 @@ import {
   Controller,
   DefaultValuePipe,
   Delete,
+  ForbiddenException,
   Get,
   HttpCode,
   HttpStatus,
@@ -62,7 +63,6 @@ export class ProtectedController {
     private readonly turnstileService: TurnstileService,
   ) { }
 
-  @Roles(Role.ADMIN)
   @AuditAction('LOGIN', 'admin')
   @Patch('login')
   async login(
@@ -76,6 +76,11 @@ export class ProtectedController {
       req,
       loginDto.password,
     );
+
+    const user = await this.userCrudRepoService.findOneByEmail(loginDto.email);
+    if (!user?.roles.some((userRole) => userRole.role === Role.ADMIN)) {
+      throw new ForbiddenException('Admin access required');
+    }
 
     if ('_2fa_token' in result) {
       response.cookie('2fa_token', result._2fa_token, twoFATokenOptions);
