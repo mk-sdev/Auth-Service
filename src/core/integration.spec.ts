@@ -12,6 +12,7 @@ import { Repository } from 'typeorm';
 import { JwtPayload, Provider, Role } from '../utils/interfaces';
 import { AuditLoggerService } from '../utils/audit/audit.service';
 import { MailQueueService } from '../mail/mail-queue.service';
+import { MailService } from '../mail/mail.service';
 import { PasswordRepoService } from '../repository/passwordRepo.service';
 import { TokenRepoService } from '../repository/tokenRepo.service';
 import { UserCrudRepoService } from '../repository/userCrudRepo.service';
@@ -97,6 +98,13 @@ describe('CoreService - Integration (real DB)', () => {
             enqueueTokenEmail: jest.fn(),
           },
         },
+        {
+          provide: MailService,
+          useValue: {
+            sendSuspiciousLoginEmail: jest.fn(),
+            sendAccountDeletionAlert: jest.fn(),
+          },
+        },
       ],
     }).compile();
 
@@ -108,6 +116,10 @@ describe('CoreService - Integration (real DB)', () => {
       getRepositoryToken(RefreshToken),
     );
     hashService = module.get(HashService);
+  });
+
+  afterAll(async () => {
+    if (module) await module.close();
   });
 
   beforeEach(async () => {
@@ -202,7 +214,7 @@ describe('CoreService - Integration (real DB)', () => {
     // still 5 tokens
     expect(tokens.length).toBe(5);
 
-    // the oldest one should be deleted
+    // The earliest-expiring token should be deleted.
     expect(tokens.map((t) => t.token)).not.toContain('old_token_1');
 
     // updated tokens should include a new hashed token
@@ -264,7 +276,7 @@ describe('CoreService - Integration (real DB)', () => {
     // perform logout
     await coreService.logout(refreshTokenPlain1);
 
-    // check if the token has been removed
+    // The logged-out token should be removed by its JWT ID.
     tokensInDb = await refreshTokenRepo.find({ where: { userId: user!._id } });
 
     expect(tokensInDb.length).toBe(1);
@@ -328,7 +340,7 @@ describe('CoreService - Integration (real DB)', () => {
     // perform global logout
     await coreService.globalLogout(user!._id);
 
-    // check if the token has been removed
+    // Global logout should remove every refresh-token record.
     tokensInDb = await refreshTokenRepo.find({ where: { userId: user!._id } });
 
     expect(tokensInDb.length).toBe(0);
@@ -398,7 +410,7 @@ describe('CoreService - Integration (real DB)', () => {
     expect(refreshPayload.sub).toBe(user!._id);
     expect(refreshPayload.jti).toBeDefined();
 
-    // check if the token has been removed
+    // The used token should be replaced with a new ID.
     tokensInDb = await refreshTokenRepo.find({
       where: { userId: user!._id },
     });
@@ -408,6 +420,7 @@ describe('CoreService - Integration (real DB)', () => {
       (token) => token.tokenId === refreshPayload.jti,
     );
     expect(rotatedToken).toBeDefined();
+    expect(rotatedToken!.tokenExpires.getTime()).toBe(refreshPayload.exp * 1000);
     expect(
       await hashService.verify(rotatedToken!.token, jwts.refresh_token),
     ).toBe(true);
