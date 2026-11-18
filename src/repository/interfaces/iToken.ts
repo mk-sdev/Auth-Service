@@ -1,12 +1,19 @@
 export interface IToken {
-  getAllTokens(userId: string): Promise<string[]>;
-  addRefreshToken(id: string, token: string): Promise<void>;
-  replaceRefreshToken(
-    id: string,
-    oldToken: string,
-    newToken: string,
+  findRefreshToken(userId: string, tokenId: string): Promise<string | null>;
+  addRefreshToken(
+    userId: string,
+    tokenId: string,
+    token: string,
+    tokenExpires: Date,
   ): Promise<void>;
-  removeRefreshToken(userId: string, token: string): Promise<void>;
+  replaceRefreshToken(
+    userId: string,
+    oldTokenId: string,
+    tokenId: string,
+    token: string,
+    tokenExpires: Date,
+  ): Promise<boolean>;
+  removeRefreshToken(userId: string, tokenId: string): Promise<void>;
   trimRefreshTokens(userId: string, maxTokens?: number): Promise<void>;
-  clearTokens(id: string);
+  clearTokens(id: string): Promise<void>;
 }

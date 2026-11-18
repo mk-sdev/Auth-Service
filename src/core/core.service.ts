@@ -9,6 +9,7 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Request } from 'express';
+import { randomUUID } from 'crypto';
 import Redis from 'ioredis';
 import { PasswordRepoService } from '../repository/passwordRepo.service';
 import { TokenRepoService } from '../repository/tokenRepo.service';
@@ -150,7 +151,13 @@ export class CoreService implements OnModuleInit {
       roles: userWithRoles?.roles.map((userRole) => userRole.role) ?? [],
     };
     const access_token = await this.accessTokenService.signAsync(payload);
-    const refresh_token = await this.refreshTokenService.signAsync(payload);
+    const tokenId = randomUUID();
+    const refresh_token = await this.refreshTokenService.signAsync(payload, {
+      jwtid: tokenId,
+    });
+    const refreshPayload = this.refreshTokenService.decode(
+      refresh_token,
+    ) as JwtPayload;
 
     const hashedRefreshToken: string =
       await this.hashService.hash(refresh_token);
@@ -158,7 +165,9 @@ export class CoreService implements OnModuleInit {
     //* save refresh token to the db
     await this.tokenRepoService.addRefreshToken(
       user._id as string,
+      tokenId,
       hashedRefreshToken,
+      new Date(refreshPayload.exp * 1000),
     );
 
     await this.tokenRepoService.trimRefreshTokens(String(user._id));
@@ -176,20 +185,20 @@ export class CoreService implements OnModuleInit {
       const payload: JwtPayload =
         await this.refreshTokenService.verifyAsync(refresh_token);
 
-      const refreshTokens: string[] = await this.tokenRepoService.getAllTokens(
-        payload.sub,
-      );
-
-      if (!refreshTokens.length)
+      if (!payload.jti)
         throw new UnauthorizedException('Invalid refresh token');
 
-      //iterate over refreshTokens
-      for (const t of refreshTokens) {
-        const isMatch = await this.hashService.verify(t, refresh_token);
-        if (isMatch) {
-          await this.tokenRepoService.removeRefreshToken(payload.sub, t);
-        }
-      }
+      const hashedToken = await this.tokenRepoService.findRefreshToken(
+        payload.sub,
+        payload.jti,
+      );
+      if (
+        !hashedToken ||
+        !(await this.hashService.verify(hashedToken, refresh_token))
+      )
+        throw new UnauthorizedException('Invalid refresh token');
+
+      await this.tokenRepoService.removeRefreshToken(payload.sub, payload.jti);
     } catch (err) {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
       console.warn('Logout error:', err.message);
@@ -208,8 +217,12 @@ export class CoreService implements OnModuleInit {
       const refreshPayload: JwtPayload =
         await this.refreshTokenService.verifyAsync(refresh_token);
       const user = await this.userCrudRepoService.findOne(refreshPayload.sub);
-      const tokens = await this.tokenRepoService.getAllTokens(
+      if (!refreshPayload.jti)
+        throw new UnauthorizedException('Invalid refresh token');
+
+      const hashedToken = await this.tokenRepoService.findRefreshToken(
         refreshPayload.sub,
+        refreshPayload.jti,
       );
 
       if (!user) throw new UnauthorizedException('Invalid refresh token');
@@ -221,33 +234,34 @@ export class CoreService implements OnModuleInit {
 
       const newAccessToken =
         await this.accessTokenService.signAsync(newPayload);
-      const newRefreshToken =
-        await this.refreshTokenService.signAsync(newPayload);
+      const newTokenId = randomUUID();
+      const newRefreshToken = await this.refreshTokenService.signAsync(
+        newPayload,
+        { jwtid: newTokenId },
+      );
+      const newRefreshPayload = this.refreshTokenService.decode(
+        newRefreshToken,
+      ) as JwtPayload;
 
       const newHashedRefreshToken =
         await this.hashService.hash(newRefreshToken);
 
-      let validTokenFound = false;
-
-      for (const hashedToken of tokens) {
-        const isMatch = await this.hashService.verify(
-          hashedToken,
-          refresh_token,
-        );
-        if (isMatch) {
-          validTokenFound = true;
-          await this.tokenRepoService.replaceRefreshToken(
-            user._id as string,
-            hashedToken,
-            newHashedRefreshToken,
-          );
-          break;
-        }
-      }
-
-      if (!validTokenFound) {
+      if (
+        !hashedToken ||
+        !(await this.hashService.verify(hashedToken, refresh_token))
+      ) {
         throw new UnauthorizedException('Refresh token not recognized');
       }
+
+      const replaced = await this.tokenRepoService.replaceRefreshToken(
+        user._id as string,
+        refreshPayload.jti,
+        newTokenId,
+        newHashedRefreshToken,
+        new Date(newRefreshPayload.exp * 1000),
+      );
+      if (!replaced)
+        throw new UnauthorizedException('Refresh token not recognized');
 
       return {
         access_token: newAccessToken,

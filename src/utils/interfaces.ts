@@ -10,6 +10,7 @@ export interface JwtPayload {
   iat: number;
   exp: number;
   roles: Role[];
+  jti?: string;
 }
 
 export interface UserRequest extends Request {

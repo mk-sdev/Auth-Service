@@ -10,12 +10,19 @@ import {
 import { User } from './user.entity';
 
 @Entity('refresh_tokens')
+@Index('refresh_tokens_user_id_token_expires_idx', ['userId', 'tokenExpires'])
 export class RefreshToken {
-  @PrimaryColumn({ type: 'text' })
+  @Column({ type: 'text' })
   token: string;
+
+  @PrimaryColumn({ name: 'token_id', type: 'uuid' })
+  tokenId: string;
 
   @Column({ name: 'user_id', type: 'uuid' })
   userId: string; // FK
+
+  @Column({ name: 'token_expires', type: 'timestamptz' })
+  tokenExpires: Date;
 
   @ManyToOne(() => User, (user) => user.refreshTokens, {
     onDelete: 'CASCADE',

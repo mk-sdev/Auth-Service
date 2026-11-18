@@ -3,80 +3,77 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { IToken } from './interfaces/iToken';
 import { RefreshToken } from './entities/refresh-token.entity';
-import { User } from './entities/user.entity';
 
 @Injectable()
 export class TokenRepoService implements IToken {
   constructor(
-    @InjectRepository(User)
-    private readonly userRepository: Repository<User>,
-
     @InjectRepository(RefreshToken)
     private readonly refreshTokenRepository: Repository<RefreshToken>,
   ) {}
 
-  async getAllTokens(userId: string): Promise<string[]> {
-    const tokens = await this.refreshTokenRepository.find({
-      where: { userId },
+  async findRefreshToken(
+    userId: string,
+    tokenId: string,
+  ): Promise<string | null> {
+    const refreshToken = await this.refreshTokenRepository.findOne({
+      where: { userId, tokenId },
       select: ['token'],
     });
-    return tokens.map((t) => t.token);
+    return refreshToken?.token ?? null;
   }
 
-  async addRefreshToken(_id: string, token: string): Promise<void> {
-    const user = await this.userRepository.findOne({ where: { _id } });
-    if (!user) return;
-
+  async addRefreshToken(
+    userId: string,
+    tokenId: string,
+    token: string,
+    tokenExpires: Date,
+  ): Promise<void> {
     const refreshToken = this.refreshTokenRepository.create({
       token,
-      userId: user._id,
+      tokenId,
+      userId,
+      tokenExpires,
     });
     await this.refreshTokenRepository.save(refreshToken);
   }
 
   async replaceRefreshToken(
-    _id: string,
-    oldToken: string,
+    userId: string,
+    oldTokenId: string,
+    tokenId: string,
     newToken: string,
-  ): Promise<void> {
-    const old = await this.refreshTokenRepository.findOne({
-      where: { token: oldToken, userId: _id },
-      relations: ['user'],
-    });
-
-    if (old) {
-      // token update
-      await this.refreshTokenRepository.remove(old);
-    }
-
-    // add new token
-    const user = await this.userRepository.findOne({ where: { _id } });
-    if (!user) return;
-
-    const newRefreshToken = this.refreshTokenRepository.create({
-      token: newToken,
-      userId: user._id,
-    });
-    await this.refreshTokenRepository.save(newRefreshToken);
+    tokenExpires: Date,
+  ): Promise<boolean> {
+    const result = await this.refreshTokenRepository.update(
+      { userId, tokenId: oldTokenId },
+      {
+        token: newToken,
+        tokenId,
+        tokenExpires,
+      },
+    );
+    return (result.affected ?? 0) > 0;
   }
 
-  async removeRefreshToken(userId: string, token: string): Promise<void> {
+  async removeRefreshToken(userId: string, tokenId: string): Promise<void> {
     await this.refreshTokenRepository.delete({
-      token,
-      userId: userId,
+      userId,
+      tokenId,
     });
   }
 
   async trimRefreshTokens(userId: string, maxTokens: number = 5): Promise<void> {
+    const tokenCount = await this.refreshTokenRepository.countBy({ userId });
+    const tokensToRemoveCount = tokenCount - maxTokens;
+    if (tokensToRemoveCount <= 0) return;
+
     const tokens = await this.refreshTokenRepository.find({
       where: { userId },
-      //order: { token: 'DESC' },
+      select: ['tokenId'],
+      order: { tokenExpires: 'ASC', tokenId: 'ASC' },
+      take: tokensToRemoveCount,
     });
-
-    if (tokens.length <= maxTokens) return;
-
-    const tokensToRemove = tokens.slice(0, tokens.length - maxTokens);
-    await this.refreshTokenRepository.remove(tokensToRemove);
+    await this.refreshTokenRepository.delete(tokens.map(({ tokenId }) => tokenId));
   }
 
   async clearTokens(_id: string): Promise<void> {

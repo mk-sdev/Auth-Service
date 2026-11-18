@@ -19,6 +19,7 @@ import { Request } from 'express';
 import { TokensModule } from '../utils/tokens.module';
 import { TokenService } from './token.service';
 import { VerificationRepoService } from '../repository/verificationRepo.service';
+import { randomUUID } from 'crypto';
 process.env.JWT_ACCESS_SECRET = 'test_access_secret';
 process.env.JWT_REFRESH_SECRET = 'test_refresh_secret';
 process.env.PEPPER=""
@@ -157,6 +158,7 @@ describe('CoreService - Integration (real DB)', () => {
       jwts.refresh_token,
     );
     expect(payload.sub).toBe(user!._id);
+    expect(payload.jti).toBeDefined();
 
     const tokens = await refreshTokenRepo.find({
       where: { userId: user!._id },
@@ -164,6 +166,8 @@ describe('CoreService - Integration (real DB)', () => {
 
     expect(tokens.length).toBe(1);
     expect(tokens[0].token.startsWith('$argon2id$')).toBe(true);
+    expect(tokens[0].tokenId).toBe(payload.jti);
+    expect(tokens[0].tokenExpires.getTime()).toBe(payload.exp * 1000);
   });
 
   test('[login] should replace the oldest token if user has 5 tokens', async () => {
@@ -175,7 +179,9 @@ describe('CoreService - Integration (real DB)', () => {
     for (let i = 1; i <= 5; i++) {
       const token = refreshTokenRepo.create({
         userId: user!._id,
+        tokenId: randomUUID(),
         token: `old_token_${i}`,
+        tokenExpires: new Date(Date.UTC(2024, 0, i)),
       });
       await refreshTokenRepo.save(token);
     }
@@ -191,7 +197,7 @@ describe('CoreService - Integration (real DB)', () => {
 
     const tokens = await refreshTokenRepo.find({
       where: { userId: user!._id },
-      order: { token: 'ASC' },
+      order: { tokenExpires: 'ASC' },
     });
 
     // still 5 tokens
@@ -213,14 +219,16 @@ describe('CoreService - Integration (real DB)', () => {
 
     // generate a real JWT refresh tokens
     const refreshTokenService = module.get<JwtService>('JWT_REFRESH_SERVICE');
-    const refreshTokenPlain1 = await refreshTokenService.signAsync({
-      sub: user!._id,
-      iat: Date.now(),
-    });
-    const refreshTokenPlain2 = await refreshTokenService.signAsync({
-      sub: user!._id,
-      iat: Date.now() + 1,
-    });
+    const tokenId1 = randomUUID();
+    const tokenId2 = randomUUID();
+    const refreshTokenPlain1 = await refreshTokenService.signAsync(
+      { sub: user!._id },
+      { jwtid: tokenId1 },
+    );
+    const refreshTokenPlain2 = await refreshTokenService.signAsync(
+      { sub: user!._id },
+      { jwtid: tokenId2 },
+    );
 
     // hash the tokens
     const hashedToken1 = await hashService.hash(refreshTokenPlain1);
@@ -231,12 +239,20 @@ describe('CoreService - Integration (real DB)', () => {
       refreshTokenRepo.create({
         userId: user!._id,
         token: hashedToken1,
+        tokenId: tokenId1,
+        tokenExpires: new Date(
+          (refreshTokenService.decode(refreshTokenPlain1) as JwtPayload).exp * 1000,
+        ),
       }),
     );
     await refreshTokenRepo.save(
       refreshTokenRepo.create({
         userId: user!._id,
         token: hashedToken2,
+        tokenId: tokenId2,
+        tokenExpires: new Date(
+          (refreshTokenService.decode(refreshTokenPlain2) as JwtPayload).exp * 1000,
+        ),
       }),
     );
 
@@ -252,12 +268,11 @@ describe('CoreService - Integration (real DB)', () => {
     // check if the token has been removed
     tokensInDb = await refreshTokenRepo.find({ where: { userId: user!._id } });
 
-    const remaining = await hashService.verify(
-      tokensInDb[0].token,
-      refreshTokenPlain2,
-    );
-    expect(remaining).toBe(true);
     expect(tokensInDb.length).toBe(1);
+    expect(tokensInDb[0].tokenId).toBe(tokenId2);
+    expect(
+      await hashService.verify(tokensInDb[0].token, refreshTokenPlain2),
+    ).toBe(true);
   });
 
   test('[globalLogout] should remove all refresh tokens on global logout', async () => {
@@ -268,14 +283,16 @@ describe('CoreService - Integration (real DB)', () => {
 
     // generate a real JWT refresh tokens
     const refreshTokenService = module.get<JwtService>('JWT_REFRESH_SERVICE');
-    const refreshTokenPlain1 = await refreshTokenService.signAsync({
-      sub: user!._id,
-      iat: Date.now(),
-    });
-    const refreshTokenPlain2 = await refreshTokenService.signAsync({
-      sub: user!._id,
-      iat: Date.now() + 1,
-    });
+    const tokenId1 = randomUUID();
+    const tokenId2 = randomUUID();
+    const refreshTokenPlain1 = await refreshTokenService.signAsync(
+      { sub: user!._id },
+      { jwtid: tokenId1 },
+    );
+    const refreshTokenPlain2 = await refreshTokenService.signAsync(
+      { sub: user!._id },
+      { jwtid: tokenId2 },
+    );
 
     // hash the tokens
     const hashedToken1 = await hashService.hash(refreshTokenPlain1);
@@ -286,12 +303,20 @@ describe('CoreService - Integration (real DB)', () => {
       refreshTokenRepo.create({
         userId: user!._id,
         token: hashedToken1,
+        tokenId: tokenId1,
+        tokenExpires: new Date(
+          (refreshTokenService.decode(refreshTokenPlain1) as JwtPayload).exp * 1000,
+        ),
       }),
     );
     await refreshTokenRepo.save(
       refreshTokenRepo.create({
         userId: user!._id,
         token: hashedToken2,
+        tokenId: tokenId2,
+        tokenExpires: new Date(
+          (refreshTokenService.decode(refreshTokenPlain2) as JwtPayload).exp * 1000,
+        ),
       }),
     );
 
@@ -318,14 +343,16 @@ describe('CoreService - Integration (real DB)', () => {
 
     // generate a real JWT refresh tokens
     const refreshTokenService = module.get<JwtService>('JWT_REFRESH_SERVICE');
-    const refreshTokenPlain1 = await refreshTokenService.signAsync({
-      sub: user!._id,
-      iat: Date.now(),
-    });
-    const refreshTokenPlain2 = await refreshTokenService.signAsync({
-      sub: user!._id,
-      iat: Date.now() + 1,
-    });
+    const tokenId1 = randomUUID();
+    const tokenId2 = randomUUID();
+    const refreshTokenPlain1 = await refreshTokenService.signAsync(
+      { sub: user!._id },
+      { jwtid: tokenId1 },
+    );
+    const refreshTokenPlain2 = await refreshTokenService.signAsync(
+      { sub: user!._id },
+      { jwtid: tokenId2 },
+    );
 
     // hash the tokens
     const hashedToken1 = await hashService.hash(refreshTokenPlain1);
@@ -336,12 +363,20 @@ describe('CoreService - Integration (real DB)', () => {
       refreshTokenRepo.create({
         userId: user!._id,
         token: hashedToken1,
+        tokenId: tokenId1,
+        tokenExpires: new Date(
+          (refreshTokenService.decode(refreshTokenPlain1) as JwtPayload).exp * 1000,
+        ),
       }),
     );
     await refreshTokenRepo.save(
       refreshTokenRepo.create({
         userId: user!._id,
         token: hashedToken2,
+        tokenId: tokenId2,
+        tokenExpires: new Date(
+          (refreshTokenService.decode(refreshTokenPlain2) as JwtPayload).exp * 1000,
+        ),
       }),
     );
 
@@ -362,6 +397,7 @@ describe('CoreService - Integration (real DB)', () => {
       jwts.refresh_token,
     );
     expect(refreshPayload.sub).toBe(user!._id);
+    expect(refreshPayload.jti).toBeDefined();
 
     // check if the token has been removed
     tokensInDb = await refreshTokenRepo.find({
@@ -369,19 +405,20 @@ describe('CoreService - Integration (real DB)', () => {
     });
     expect(tokensInDb.length).toBe(2);
 
-    // should replace the used token with a new one
-    const newToken = await hashService.verify(
-      tokensInDb[1].token,
-      refreshTokenPlain2,
+    const rotatedToken = tokensInDb.find(
+      (token) => token.tokenId === refreshPayload.jti,
     );
-    expect(newToken).not.toBe(true);
+    expect(rotatedToken).toBeDefined();
+    expect(
+      await hashService.verify(rotatedToken!.token, jwts.refresh_token),
+    ).toBe(true);
+    expect(tokensInDb.some((token) => token.tokenId === tokenId2)).toBe(false);
 
-    // other tokens should stay in the db
-    const untouchedToken = await hashService.verify(
-      tokensInDb[0].token,
-      refreshTokenPlain1,
-    );
-    expect(untouchedToken).toBe(true);
+    const untouchedToken = tokensInDb.find((token) => token.tokenId === tokenId1);
+    expect(untouchedToken).toBeDefined();
+    expect(
+      await hashService.verify(untouchedToken!.token, refreshTokenPlain1),
+    ).toBe(true);
   });
 
   test('[register] should create a new unverified user, assign USER role, and not create any refresh tokens', async () => {
