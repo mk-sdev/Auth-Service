@@ -1,6 +1,8 @@
+import { Injectable } from '@nestjs/common';
 import { MailerService } from '@nestjs-modules/mailer';
 import { URL } from '../utils/constants';
 
+@Injectable()
 export class MailService {
   constructor(private readonly mailerService: MailerService) { }
 
@@ -32,15 +34,13 @@ export class MailService {
               ${this.footer}
             `;
 
-    if (process.env.node_env === 'production')
-      await this.mailerService.sendMail({
-        to: toEmail,
-        subject,
-        template: undefined,
-        context,
-        html,
-      });
-    else console.log(html);
+    await this.mailerService.sendMail({
+      to: toEmail,
+      subject,
+      template: undefined,
+      context,
+      html,
+    });
   }
 
   async sendSuspiciousLoginEmail(toEmail: string, ip: string) {
@@ -51,15 +51,13 @@ export class MailService {
               ${this.footer}
             `;
 
-    if (process.env.node_env === 'production')
-      await this.mailerService.sendMail({
-        to: toEmail,
-        subject: 'Suspicious Login Attempt Detected',
-        template: undefined,
-        context: {},
-        html,
-      });
-    else console.log(html);
+    await this.mailerService.sendMail({
+      to: toEmail,
+      subject: 'Suspicious Login Attempt Detected',
+      template: undefined,
+      context: {},
+      html,
+    });
   }
 
   async sendAccountDeletionAlert(toEmail: string) {
@@ -70,15 +68,13 @@ export class MailService {
               ${this.footer}
             `;
 
-    if (process.env.node_env === 'production')
-      await this.mailerService.sendMail({
-        to: toEmail,
-        subject: 'Account Deletion Scheduled',
-        template: undefined,
-        context: {},
-        html,
-      });
-    else console.log(html);
+    await this.mailerService.sendMail({
+      to: toEmail,
+      subject: 'Account Deletion Scheduled',
+      template: undefined,
+      context: {},
+      html,
+    });
   }
 
   async send2faCode(toEmail: string, code: string) {
@@ -89,14 +85,12 @@ export class MailService {
               ${this.footer}
             `;
 
-    if (process.env.node_env === 'production')
-      await this.mailerService.sendMail({
-        to: toEmail,
-        subject: 'Your 2FA Code',
-        template: undefined,
-        context: {},
-        html,
-      });
-    else console.log(html);
+    await this.mailerService.sendMail({
+      to: toEmail,
+      subject: 'Your 2FA Code',
+      template: undefined,
+      context: {},
+      html,
+    });
   }
 }

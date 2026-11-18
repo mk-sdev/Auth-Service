@@ -1,4 +1,3 @@
-import { MailerModule } from '@nestjs-modules/mailer';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
@@ -17,6 +16,7 @@ import { HashModule } from './utils/hash/hash.module';
 import { RedisModule } from './utils/redis.module';
 import { TokensModule } from './utils/tokens.module';
 import { BackupCode } from './repository/entities/backup-code.entity';
+import { MailModule } from './mail/mail.module';
 
 @Module({
   imports: [
@@ -44,20 +44,7 @@ import { BackupCode } from './repository/entities/backup-code.entity';
         },
       ],
     }),
-    MailerModule.forRoot({
-      transport: {
-        host: 'sandbox.smtp.mailtrap.io',
-        port: 587,
-        secure: false,
-        auth: {
-          user: process.env.MAIL_USER,
-          pass: process.env.MAIL_PASS,
-        },
-      },
-      defaults: {
-        from: '"Twoja Apka" <no-reply@twoja-apka.pl>',
-      },
-    }),
+    MailModule,
     RepositoryModule,
     TokensModule,
     CoreModule,

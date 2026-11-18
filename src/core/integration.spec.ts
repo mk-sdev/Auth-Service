@@ -11,7 +11,7 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { JwtPayload, Provider, Role } from '../utils/interfaces';
 import { AuditLoggerService } from '../utils/audit/audit.service';
-import { MailService } from './mail.service';
+import { MailQueueService } from '../mail/mail-queue.service';
 import { PasswordRepoService } from '../repository/passwordRepo.service';
 import { TokenRepoService } from '../repository/tokenRepo.service';
 import { UserCrudRepoService } from '../repository/userCrudRepo.service';
@@ -92,10 +92,9 @@ describe('CoreService - Integration (real DB)', () => {
           useValue: { warn: jest.fn() },
         },
         {
-          provide: MailService,
+          provide: MailQueueService,
           useValue: {
-            sendSuspiciousLoginEmail: jest.fn(),
-            sendMailWithToken: jest.fn(),
+            enqueueTokenEmail: jest.fn(),
           },
         },
       ],

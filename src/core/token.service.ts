@@ -20,8 +20,9 @@ import {
 } from '../utils/constants';
 import { HashService } from '../utils/hash/hash.service';
 import { InvalidCredentialsException } from '../utils/invalid-credentials.exception';
-import { MailService } from './mail.service';
+import { MailQueueService } from '../mail/mail-queue.service';
 
+const MIN_REGISTER_RESPONSE_MS = 250;
 const MIN_CHANGE_EMAIL_RESPONSE_MS = 250;
 const MIN_REMIND_PASSWORD_RESPONSE_MS = 75;
 
@@ -33,10 +34,11 @@ export class TokenService {
     private readonly userCrudRepoService: UserCrudRepoService,
     private readonly hashService: HashService,
     private readonly auditLogger: AuditLoggerService,
-    private readonly mailService: MailService,
+    private readonly mailQueue: MailQueueService,
   ) { }
 
   async register(email: string, password: string, req?: Request): Promise<void> {
+    const startedAt = performance.now();
     const { ip, path, method } = req
       ? createAuditDetails(req)
       : { ip: 'unknown', path: '/register', method: 'POST' };
@@ -66,30 +68,21 @@ export class TokenService {
           verificationTokenExpires,
         });
 
-      setImmediate(() => {
-        void Promise.resolve()
-          .then(() =>
-            this.mailService.sendMailWithToken(
-              email,
-              verificationToken,
-              'Activate your account',
-              'verify your account',
-              undefined,
-              FRONTEND_URL,
-              'token',
-              '/verify-account',
-            ),
-          )
-          .catch((error: unknown) => {
-            this.auditLogger.warn('system', 'REGISTRATION_EMAIL_FAILED', {
-              ip,
-              path,
-              method,
-              email,
-              error: error instanceof Error ? error.message : String(error),
-            });
-          });
+      await this.mailQueue.enqueueTokenEmail({
+        toEmail: email,
+        token: verificationToken,
+        subject: 'Activate your account',
+        purpose: 'verify your account',
+        baseUrl: FRONTEND_URL,
+        path: '/verify-account',
+        audit: { event: 'REGISTRATION_EMAIL_FAILED', ip, path, method, email },
       });
+    }
+
+    const remainingDelay =
+      MIN_REGISTER_RESPONSE_MS - (performance.now() - startedAt);
+    if (remainingDelay > 0) {
+      await new Promise((resolve) => setTimeout(resolve, remainingDelay));
     }
   }
 
@@ -160,26 +153,15 @@ export class TokenService {
         emailChangeTokenExpires,
       );
 
-      setImmediate(() => {
-        void this.mailService
-          .sendMailWithToken(
-            newEmail,
-            verificationToken,
-            'Confirm email address change',
-            'confirm email change',
-            {},
-            FRONTEND_URL,
-            'token',
-            '/verify-email',
-          )
-          .catch((error: unknown) => {
-            this.auditLogger.warn('system', 'EMAIL_CHANGE_CONFIRMATION_FAILED', {
-              ip,
-              path,
-              method,
-              error: error instanceof Error ? error.message : String(error),
-            });
-          });
+      await this.mailQueue.enqueueTokenEmail({
+        toEmail: newEmail,
+        token: verificationToken,
+        subject: 'Confirm email address change',
+        purpose: 'confirm email change',
+        contextData: {},
+        baseUrl: FRONTEND_URL,
+        path: '/verify-email',
+        audit: { event: 'EMAIL_CHANGE_CONFIRMATION_FAILED', ip, path, method },
       });
     }
 
@@ -229,27 +211,15 @@ export class TokenService {
         email,
       });
     } else {
-      setImmediate(() => {
-        void this.mailService
-          .sendMailWithToken(
-            email,
-            resetToken,
-            'Password reset instruction',
-            'reset your password',
-            {},
-            FRONTEND_URL,
-            'token',
-            '/reset-password',
-          )
-          .catch((error: unknown) => {
-            this.auditLogger.warn('system', 'PASSWORD_RESET_EMAIL_FAILED', {
-              ip,
-              path,
-              method,
-              email,
-              error: error instanceof Error ? error.message : String(error),
-            });
-          });
+      await this.mailQueue.enqueueTokenEmail({
+        toEmail: email,
+        token: resetToken,
+        subject: 'Password reset instruction',
+        purpose: 'reset your password',
+        contextData: {},
+        baseUrl: FRONTEND_URL,
+        path: '/reset-password',
+        audit: { event: 'PASSWORD_RESET_EMAIL_FAILED', ip, path, method, email },
       });
     }
 

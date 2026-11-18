@@ -7,13 +7,13 @@ import { CoreController } from './core.controller';
 import { CoreService } from './core.service';
 import { TokenController } from './token.controller';
 import { TokenService } from './token.service';
-import { MailService } from './mail.service';
 import { RequestTimingInterceptor } from '../utils/request-timing.interceptor';
+import { MailModule } from '../mail/mail.module';
 
 @Module({
-  imports: [RepositoryModule, TokensModule, AuditModule, HashModule],
+  imports: [RepositoryModule, TokensModule, AuditModule, HashModule, MailModule],
   controllers: [CoreController, TokenController,],
-  providers: [CoreService, TokenService, MailService, RequestTimingInterceptor],
+  providers: [CoreService, TokenService, RequestTimingInterceptor],
   exports: [CoreService, TokenService],
 })
 export class CoreModule { }

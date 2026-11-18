@@ -8,7 +8,7 @@ import { JwtPayload, Role } from '../utils/interfaces';
 import { HashService } from '../utils/hash/hash.service';
 import { Request } from 'express';
 import { AuditModule } from '../utils/audit/audit.module';
-import { MailService } from './mail.service'; // Import MailService here
+import { MailService } from '../mail/mail.service'; // Import MailService here
 
 describe('CoreService', () => {
   let appService: CoreService;
