@@ -70,7 +70,7 @@ export class OAuthController {
 
     if ('_2fa_token' in result) {
       const redirectUrl = new URL(
-        `${REDIRECT_URI}/two-factor-screen/?2fa=true&tempToken=${result._2fa_token}`,
+        `${REDIRECT_URI}/two-factor-screen/?2fa=true&method=${result.twofa_method}&tempToken=${result._2fa_token}`,
       );
       res.cookie('2fa_token', result._2fa_token, twoFATokenOptions);
       return res.redirect(redirectUrl.toString());

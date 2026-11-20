@@ -17,6 +17,7 @@ import { RedisModule } from './utils/redis.module';
 import { TokensModule } from './utils/tokens.module';
 import { BackupCode } from './repository/entities/backup-code.entity';
 import { MailModule } from './mail/mail.module';
+import { WebAuthnCredential } from './repository/entities/webauthn-credential.entity';
 
 @Module({
   imports: [
@@ -33,7 +34,7 @@ import { MailModule } from './mail/mail.module';
         process.env.NODE_ENV === 'test'
           ? 'test_db'
           : process.env.DB_NAME || 'auth_db',
-      entities: [User, UserRole, RefreshToken, BackupCode],
+      entities: [User, UserRole, RefreshToken, BackupCode, WebAuthnCredential],
       synchronize: true,
     }),
     ThrottlerModule.forRoot({

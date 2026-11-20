@@ -8,10 +8,11 @@ import { TokenRepoService } from './tokenRepo.service';
 import { UserCrudRepoService } from './userCrudRepo.service';
 import { VerificationRepoService } from './verificationRepo.service';
 import { BackupCode } from './entities/backup-code.entity';
+import { WebAuthnCredential } from './entities/webauthn-credential.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User, UserRole, RefreshToken, BackupCode]),
+    TypeOrmModule.forFeature([User, UserRole, RefreshToken, BackupCode, WebAuthnCredential]),
   ],
   providers: [
     UserCrudRepoService,

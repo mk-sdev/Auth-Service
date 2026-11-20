@@ -10,6 +10,12 @@ import { Provider } from '../../utils/interfaces';
 import { RefreshToken } from './refresh-token.entity';
 import { UserRole } from './user-role.entity';
 import { BackupCode } from './backup-code.entity';
+import { WebAuthnCredential } from './webauthn-credential.entity';
+
+export enum TwoFactorMethod {
+  TOTP = 'TOTP',
+  WEBAUTHN = 'WEBAUTHN',
+}
 
 @Entity('users')
 export class User {
@@ -31,6 +37,9 @@ export class User {
 
   @OneToMany(() => BackupCode, (code) => code.user, { cascade: true })
   backupCodes: Relation<BackupCode[]>;
+
+  @OneToMany(() => WebAuthnCredential, (credential) => credential.user, { cascade: true })
+  webAuthnCredentials: Relation<WebAuthnCredential[]>;
 
   @Column({
     type: 'enum',
@@ -87,6 +96,6 @@ export class User {
   @Column({ name: "otp_secret", type: "text", nullable: true })
   otpSecret?: string;
 
-  @Column({ name: "is_2fa_enabled", type: "boolean", default: false })
-  isTwoFactorEnabled?: boolean;
+  @Column({ name: 'twofa_method', type: 'varchar', length: 16, nullable: true })
+  twoFactorMethod?: TwoFactorMethod | null;
 }

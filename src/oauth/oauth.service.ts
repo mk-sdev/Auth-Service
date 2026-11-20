@@ -7,7 +7,7 @@ import { User } from 'src/repository/entities/user.entity';
 
 export type LoginResult =
   | { access_token: string; refresh_token: string }
-  | { _2fa_token: string };
+  | { _2fa_token: string; twofa_method: string };
 
 @Injectable()
 export class OAuthService {

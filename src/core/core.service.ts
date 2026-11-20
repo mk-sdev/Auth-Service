@@ -58,7 +58,7 @@ export class CoreService implements OnModuleInit {
     email: string,
     req: Request,
     password?: string, // when logging via OAuth password is not needed
-  ): Promise<{ access_token: string; refresh_token: string } | { _2fa_token: string }> {
+  ): Promise<{ access_token: string; refresh_token: string } | { _2fa_token: string; twofa_method: string }> {
     const key = `login_attempts:${email}`;
     const ttlSeconds = 60 * 5; // 5 minutes
 
@@ -127,15 +127,12 @@ export class CoreService implements OnModuleInit {
       throw new InvalidCredentialsException();
     }
 
-    if (user.isTwoFactorEnabled) {
-      console.log(user.isTwoFactorEnabled)
+    if (user.twoFactorMethod) {
 
       const _2fa_token = await this.twoFATokenService.signAsync(
-        { sub: user._id, type: '2fa' },
+        { sub: user._id, type: '2fa', jti: randomUUID() },
       );
-      return {
-        _2fa_token,
-      };
+      return { _2fa_token, twofa_method: user.twoFactorMethod };
     }
 
     if (user.isDeletionPending) {

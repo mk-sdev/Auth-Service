@@ -34,13 +34,15 @@ export class MailService {
               ${this.footer}
             `;
 
-    await this.mailerService.sendMail({
-      to: toEmail,
-      subject,
-      template: undefined,
-      context,
-      html,
-    });
+    if (process.env.node_env === 'production')
+      await this.mailerService.sendMail({
+        to: toEmail,
+        subject,
+        template: undefined,
+        context,
+        html,
+      });
+    //else console.log(html);
   }
 
   async sendSuspiciousLoginEmail(toEmail: string, ip: string) {
@@ -51,13 +53,15 @@ export class MailService {
               ${this.footer}
             `;
 
-    await this.mailerService.sendMail({
-      to: toEmail,
-      subject: 'Suspicious Login Attempt Detected',
-      template: undefined,
-      context: {},
-      html,
-    });
+    if (process.env.node_env === 'production')
+      await this.mailerService.sendMail({
+        to: toEmail,
+        subject: 'Suspicious Login Attempt Detected',
+        template: undefined,
+        context: {},
+        html,
+      });
+    //else console.log(html);
   }
 
   async sendAccountDeletionAlert(toEmail: string) {
@@ -68,13 +72,15 @@ export class MailService {
               ${this.footer}
             `;
 
-    await this.mailerService.sendMail({
-      to: toEmail,
-      subject: 'Account Deletion Scheduled',
-      template: undefined,
-      context: {},
-      html,
-    });
+    if (process.env.node_env === 'production')
+      await this.mailerService.sendMail({
+        to: toEmail,
+        subject: 'Account Deletion Scheduled',
+        template: undefined,
+        context: {},
+        html,
+      });
+    //else console.log(html);
   }
 
   async send2faCode(toEmail: string, code: string) {
@@ -85,12 +91,14 @@ export class MailService {
               ${this.footer}
             `;
 
-    await this.mailerService.sendMail({
-      to: toEmail,
-      subject: 'Your 2FA Code',
-      template: undefined,
-      context: {},
-      html,
-    });
+    if (process.env.node_env === 'production')
+      await this.mailerService.sendMail({
+        to: toEmail,
+        subject: 'Your 2FA Code',
+        template: undefined,
+        context: {},
+        html,
+      });
+    //else console.log(html);
   }
 }

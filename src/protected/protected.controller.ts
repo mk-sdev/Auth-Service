@@ -84,7 +84,7 @@ export class ProtectedController {
 
     if ('_2fa_token' in result) {
       response.cookie('2fa_token', result._2fa_token, twoFATokenOptions);
-      return { two_factor_required: true };
+      return { two_factor_required: true, twofa_method: result.twofa_method };
     }
 
     const { access_token, refresh_token } = result;
