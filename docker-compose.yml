@@ -32,12 +32,16 @@ services:
       - '3101:3100'
     command: -config.file=/etc/loki/local-config.yaml
 
-  promtail:
-    image: grafana/promtail:latest
+  alloy:
+    image: grafana/alloy:latest
     volumes:
-      - ./docker/promtail-config.yaml:/etc/promtail/config.yml
-      - ./logs:/app/logs
-    command: -config.file=/etc/promtail/config.yml
+      - ./docker/alloy-config.alloy:/etc/alloy/config.alloy:ro
+      - ./logs:/app/logs:ro
+      - alloy-data:/var/lib/alloy/data
+    command:
+      - run
+      - --storage.path=/var/lib/alloy/data
+      - /etc/alloy/config.alloy
     depends_on:
       - loki
 
@@ -93,3 +97,4 @@ services:
 volumes:
   postgres_data:
   grafana-storage:
+  alloy-data:

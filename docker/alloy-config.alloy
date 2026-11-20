@@ -1,0 +1,20 @@
+loki.source.file "nestjs_audit_log" {
+  targets = [
+    {
+      __path__ = "/app/logs/*.log*",
+      job      = "nestjs",
+    },
+  ]
+
+  forward_to = [loki.write.local.receiver]
+
+  file_match {
+    enabled = true
+  }
+}
+
+loki.write "local" {
+  endpoint {
+    url = "http://loki:3100/loki/api/v1/push"
+  }
+}
